@@ -144,7 +144,6 @@ export function MapPanel({
   }, [districtFeatures, view.district, view.state]);
 
   const features = view.level === 'national' ? statesGeo?.features ?? [] : districtsGeo?.features ?? [];
-  const boundsFeatures = features;
   const bounds = useMemo(() => boundsOf(features), [features]);
   const paths = useMemo(() => {
     if (!bounds) return [];
