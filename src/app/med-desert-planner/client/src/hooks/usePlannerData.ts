@@ -6,7 +6,7 @@ import type { SpecialtyRow, StateRow, ScenarioRow, DistrictScore, EvidenceRow } 
 const NONE = '__none__';
 
 export type PlannerFilters = {
-  specialty: string;
+  specialty: string[];
   /** '' = All — India */
   state: string;
   /** 'All verdicts' or a verdict label */
@@ -26,13 +26,15 @@ export function useReferenceData() {
 }
 
 export function useDistrictScores(filters: PlannerFilters) {
+  const specialtyParam = filters.specialty.length > 0 ? filters.specialty.join('|') : 'All capabilities';
+
   const params = useMemo(
     () => ({
-      specialty: sql.string(filters.specialty || NONE),
+      specialty: sql.string(specialtyParam),
       state: sql.string(filters.state || 'All states'),
       verdict: sql.string(filters.verdict || 'All verdicts'),
     }),
-    [filters.specialty, filters.state, filters.verdict]
+    [specialtyParam, filters.state, filters.verdict]
   );
   const { data = [], loading, error } = useAnalyticsQuery('district_scores', params);
   return { rows: (data ?? []) as DistrictScore[], loading, error };

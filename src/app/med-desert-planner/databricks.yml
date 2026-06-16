@@ -4,15 +4,20 @@ bundle:
 variables:
   sql_warehouse_id:
     description: SQL Warehouse ID
+  genie_space_id:
+    description: Genie Space ID
+  genie_space_name:
+    description: Genie Space name
 
 resources:
   apps:
     app:
-      name: "med-desert-planner"
-      description: "Medical Desert Planner"
+      name: 'med-desert-planner'
+      description: 'Medical Desert Planner'
       source_code_path: ./
       user_api_scopes:
         - sql
+        - dashboards.genie
 
       # The resources which this app has access to.
       resources:
@@ -20,6 +25,11 @@ resources:
           sql_warehouse:
             id: ${var.sql_warehouse_id}
             permission: CAN_USE
+        - name: genie-space
+          genie_space:
+            name: ${var.genie_space_name}
+            space_id: ${var.genie_space_id}
+            permission: CAN_RUN
 
 targets:
   default:
@@ -29,3 +39,5 @@ targets:
 
     variables:
       sql_warehouse_id: 76ed2f6ff2ff98a7
+      genie_space_id: 01f168ff81bf1b79912940d2dade2312
+      genie_space_name: Healthcare Facility Insights

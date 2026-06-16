@@ -6,6 +6,7 @@ import { districtKey } from './types';
 import { useReferenceData, useDistrictScores, useDistrictDetail } from './hooks/usePlannerData';
 import { useGeoData } from './hooks/useGeoData';
 import { saveScenario, reviewClaim } from './api/persistence';
+import { displaySpecialty } from './lib/format';
 import { AppBar, type SaveState } from './components/AppBar';
 import { ControlBar } from './components/controls/ControlBar';
 import { InsightRail } from './components/rail/InsightRail';
@@ -18,7 +19,8 @@ type ReviewStatus = 'verified' | 'unclear' | 'disputed';
 export default function App() {
   const { specialties, states, scenarios, specialtiesLoading } = useReferenceData();
 
-  const [specialty, setSpecialty] = useState('');
+  const [specialty, setSpecialty] = useState<string[]>([]);
+  const [problemQuery, setProblemQuery] = useState('');
   const [region, setRegion] = useState('');
   const verdict = 'All verdicts';
   const [view, setView] = useState<ViewState>({ level: 'national', state: null, district: null });
@@ -33,14 +35,14 @@ export default function App() {
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [saveMessage, setSaveMessage] = useState('');
 
-  const effectiveSpecialty = specialty || 'All capabilities';
+  const effectiveSpecialty = specialty.length > 0 ? specialty.join(', ') : 'All capabilities';
 
   const {
     rows,
     loading: scoresLoading,
     error: scoresError,
   } = useDistrictScores({
-    specialty: effectiveSpecialty,
+    specialty,
     state: region,
     verdict,
   });
@@ -51,12 +53,35 @@ export default function App() {
   );
 
   const detail = useDistrictDetail({
-    specialty: selectedRow?.specialty ?? effectiveSpecialty,
+    specialty: selectedRow?.specialty ?? specialty[0] ?? effectiveSpecialty,
     state: selectedRow?.state ?? region,
     district: selectedRow?.district_name ?? '',
   });
 
   const { states: statesGeo, districts: districtsGeo, loadDistricts } = useGeoData();
+
+  const handleGenieResult = useCallback(
+    (mappedSpecialties: string[]) => {
+      const normalizedMatches = mappedSpecialties
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean)
+        .map((value) =>
+          specialties.find((row) => {
+            const display = displaySpecialty(row.specialty, row.display_name).toLowerCase();
+            return row.specialty.toLowerCase() === value || display === value;
+          })
+        )
+        .filter((row): row is NonNullable<typeof row> => row !== undefined);
+
+      const nextSpecialties = [...new Set(normalizedMatches.map((row) => row.specialty))];
+      if (nextSpecialties.length === 0) return 0;
+
+      setSpecialty(nextSpecialties);
+      setSelectedKey(null);
+      return nextSpecialties.length;
+    },
+    [specialties]
+  );
 
   /* ---------- navigation ---------- */
   const goNational = useCallback(() => {
@@ -170,7 +195,9 @@ export default function App() {
     setActiveScenarioId(s.scenario_id);
     setScenarioName(s.name);
     setScenarioNotes(s.notes ?? '');
-    if (s.specialty) setSpecialty(s.specialty === 'All capabilities' ? '' : s.specialty);
+    if (s.specialty) {
+      setSpecialty(s.specialty === 'All capabilities' ? [] : s.specialty.split(',').map((item) => item.trim()));
+    }
     flash('saved', `Loaded "${s.name}"`);
   }, []);
 
@@ -182,6 +209,9 @@ export default function App() {
         specialtiesLoading={specialtiesLoading}
         specialty={specialty}
         onSpecialty={setSpecialty}
+        problemQuery={problemQuery}
+        onProblemQuery={setProblemQuery}
+        onGenieResult={handleGenieResult}
         states={states}
         region={region}
         onRegion={(s) => (s ? goState(s) : goNational())}

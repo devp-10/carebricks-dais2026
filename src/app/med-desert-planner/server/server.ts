@@ -1,14 +1,28 @@
-import { createApp, analytics, server, sql } from '@databricks/appkit';
+import { createApp, analytics, genie, server, sql } from '@databricks/appkit';
 import type { Request, Response } from 'express';
 
 type SqlString = ReturnType<typeof sql.string>;
+type GenieStreamEvent =
+  | { type: 'message_start'; conversationId?: string; messageId?: string; spaceId?: string }
+  | { type: 'status'; status: string }
+  | { type: 'message_result'; message: { content?: string } }
+  | { type: 'query_result'; data?: { result?: { data_array?: (string | null)[][] } } }
+  | { type: 'error'; error: string }
+  | {
+      type: 'history_info';
+      conversationId?: string;
+      spaceId?: string;
+      nextPageToken?: string | null;
+      loadedCount?: number;
+    };
+
+type GenieApi = {
+  sendMessage: (alias: string, content: string) => AsyncGenerator<GenieStreamEvent>;
+};
 
 type AnalyticsApi = {
   asUser: (req: Request) => {
-    query: (
-      statement: string,
-      parameters?: Record<string, SqlString | null | undefined>,
-    ) => Promise<unknown>;
+    query: (statement: string, parameters?: Record<string, SqlString | null | undefined>) => Promise<unknown>;
   };
 };
 
@@ -21,24 +35,102 @@ function jsonResponse(res: Response, status: number, body: Record<string, unknow
   return res.status(status).json(body);
 }
 
+function addSpecialty(target: Set<string>, value: unknown) {
+  if (typeof value !== 'string') return;
+  const specialty = value.trim();
+  if (specialty) target.add(specialty);
+}
+
+function addSpecialtiesFromText(target: Set<string>, textValue: string) {
+  const textBody = textValue.trim();
+  if (!textBody) return;
+
+  const jsonMatch = textBody.match(/\[[\s\S]*\]/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]) as unknown;
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) addSpecialty(target, item);
+        return;
+      }
+    } catch {
+      // Fall through to line parsing.
+    }
+  }
+
+  for (const line of textBody.split(/\r?\n/)) {
+    const cleaned = line
+      .replace(/^[-*•\d.)\s]+/, '')
+      .replace(/^["'`]+|["'`:]+$/g, '')
+      .trim();
+    addSpecialty(target, cleaned);
+  }
+}
+
 async function runUserSql(
   analyticsApi: AnalyticsApi,
   req: Request,
   statement: string,
-  parameters: Record<string, SqlString | null | undefined>,
+  parameters: Record<string, SqlString | null | undefined>
 ) {
   return analyticsApi.asUser(req).query(statement, parameters);
 }
 
 createApp({
-  plugins: [
-    analytics(),
-    server(),
-  ],
+  plugins: [analytics(), genie(), server()],
   onPluginsReady(appkit) {
     const analyticsApi = appkit.analytics as AnalyticsApi;
+    const genieApi = appkit.genie as GenieApi;
 
     appkit.server.extend((app) => {
+      app.post('/api/genie/map-problem', async (req: Request, res: Response) => {
+        try {
+          const body = req.body as Record<string, unknown>;
+          const problem = text(body.problem);
+
+          if (!problem) {
+            return jsonResponse(res, 400, { error: 'problem is required' });
+          }
+
+          const geniePrompt = [
+            'Map this medical access problem to the planner capability filter vocabulary.',
+            'Return only selectable specialty/capability names or specialty codes that best match the problem.',
+            'Prefer exact values from the app specialty vocabulary. If you query data, return one column named specialty.',
+            'Do not include explanations.',
+            `Problem: ${problem}`,
+          ].join('\n');
+
+          const specialties = new Set<string>();
+          let rawResponse = '';
+
+          for await (const event of genieApi.sendMessage('default', geniePrompt)) {
+            if (event.type === 'message_result') {
+              rawResponse = event.message.content ?? '';
+              if (specialties.size === 0) addSpecialtiesFromText(specialties, rawResponse);
+            } else if (event.type === 'query_result') {
+              const rows = event.data?.result?.data_array ?? [];
+              for (const row of rows) {
+                if (row.length === 1 && typeof row[0] === 'string' && row[0].trim().startsWith('[')) {
+                  addSpecialtiesFromText(specialties, row[0]);
+                } else {
+                  addSpecialty(specialties, row[0]);
+                }
+              }
+            } else if (event.type === 'error') {
+              throw new Error(event.error);
+            }
+          }
+
+          return jsonResponse(res, 200, { specialties: [...specialties], rawResponse });
+        } catch (error) {
+          console.error('Failed to map problem via Genie', error);
+          return jsonResponse(res, 500, {
+            error: 'Failed to map problem to capabilities',
+            details: error instanceof Error ? error.message : String(error),
+          });
+        }
+      });
+
       app.post('/api/scenarios', async (req: Request, res: Response) => {
         try {
           const body = req.body as Record<string, unknown>;
@@ -66,7 +158,7 @@ createApp({
               specialty: sql.string(specialty),
               geo_filter_json: sql.string(geoFilterJson),
               notes: sql.string(notes),
-            },
+            }
           );
 
           return jsonResponse(res, 201, { scenario_id: scenarioId });
@@ -97,7 +189,7 @@ createApp({
               scenario_id: sql.string(scenarioId),
               facility_id: sql.string(facilityId),
               note: sql.string(note),
-            },
+            }
           );
 
           return jsonResponse(res, 201, { ok: true });
@@ -136,7 +228,7 @@ createApp({
               review_status: sql.string(status),
               reviewer: sql.string(reviewer),
               note: sql.string(note),
-            },
+            }
           );
 
           return jsonResponse(res, 201, { review_id: reviewId });

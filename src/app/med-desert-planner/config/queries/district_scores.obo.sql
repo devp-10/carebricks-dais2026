@@ -4,7 +4,7 @@
 WITH filtered AS (
   SELECT *
   FROM medical_desert_planner.gold.district_capability_scores
-  WHERE (:specialty = 'All capabilities' OR specialty = :specialty)
+  WHERE (:specialty = 'All capabilities' OR array_contains(split(:specialty, '\\|'), specialty))
     AND (:state = 'All states' OR state_nfhs5 = :state)
     AND (:verdict = 'All verdicts' OR verdict_label = :verdict)
 ),
