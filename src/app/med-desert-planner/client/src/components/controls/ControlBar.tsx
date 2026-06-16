@@ -22,7 +22,7 @@ export function ControlBar({
   return (
     <div
       aria-label="Planner filters"
-      className="flex flex-wrap items-end gap-x-3 gap-y-2 border-b border-line bg-surface-2 px-4 py-2"
+      className="flex flex-wrap items-end gap-x-3 gap-y-1.5 border-b border-line bg-surface-2 px-4 py-1.5"
     >
       <CapabilitySelect
         rows={specialties}

@@ -264,7 +264,7 @@ export function MapPanel({
               })}
           </svg>
         )}
-        <Legend showFacilities={view.level !== 'national'} />
+        <Legend />
       </div>
     </div>
   );

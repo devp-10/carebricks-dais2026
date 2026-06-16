@@ -1,6 +1,6 @@
 import { Flag } from 'lucide-react';
 import type { DistrictScore } from '../../types';
-import { riskHex, isDataPoor, CONFIDENCE_COPY } from '../../lib/labels';
+import { riskHex, isDataPoor } from '../../lib/labels';
 import { displaySpecialty, score } from '../../lib/format';
 import { cn } from '../../lib/utils';
 
@@ -54,14 +54,6 @@ export function DistrictRow({
           <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-faint">gap</span>
         </span>
 
-        <span
-          className={cn(
-            'shrink-0 rounded-full border px-2 py-1 text-[10px] font-medium',
-            dp ? 'border-warn/40 bg-warn/[0.08] text-warn' : 'border-ok/40 bg-ok/[0.07] text-ok',
-          )}
-        >
-          {CONFIDENCE_COPY[row.confidence_label] ?? row.confidence_label}
-        </span>
       </button>
 
       <button

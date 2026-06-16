@@ -45,32 +45,32 @@ export function CapabilitySelect({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-8 w-full min-w-[200px] items-center gap-2 rounded-[var(--radius-sm)] border border-line-strong bg-surface px-2.5 text-left text-[11px] hover:border-faint"
+        className="flex h-6 w-full min-w-[160px] items-center gap-1.5 rounded-[var(--radius-sm)] border border-line-strong bg-surface px-2 text-left text-[10px] hover:border-faint"
       >
-        <Stethoscope className="size-3.5 shrink-0 text-accent" />
+        <Stethoscope className="size-3 shrink-0 text-accent" />
         <span className="truncate font-medium text-ink">
           {loading
-            ? 'Loading capabilities…'
+            ? 'Loading…'
             : current
               ? displaySpecialty(current.specialty, current.display_name)
               : 'All Capabilities'}
         </span>
-        <ChevronDown className="ml-auto size-3.5 shrink-0 text-faint" />
+        <ChevronDown className="ml-auto size-3 shrink-0 text-faint" />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-[min(360px,90vw)] overflow-hidden rounded-[var(--radius)] border border-line bg-surface shadow-[var(--shadow-pop)]">
-          <div className="flex items-center gap-2 border-b border-line px-2.5 py-1.5">
-            <Search className="size-3.5 text-faint" />
+        <div className="absolute left-0 top-[calc(100%+4px)] z-30 w-[min(320px,90vw)] overflow-hidden rounded-[var(--radius)] border border-line bg-surface shadow-[var(--shadow-pop)]">
+          <div className="flex items-center gap-1.5 border-b border-line px-2 py-1">
+            <Search className="size-3 text-faint" />
             <input
               autoFocus
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search capabilities"
-              className="w-full bg-transparent text-[11px] outline-none placeholder:text-faint"
+              className="w-full bg-transparent text-[10px] outline-none placeholder:text-faint"
             />
           </div>
-          <ul className="max-h-[280px] overflow-auto py-1">
+          <ul className="max-h-[240px] overflow-auto py-0.5">
             <li>
               <button
                 type="button"
@@ -80,12 +80,12 @@ export function CapabilitySelect({
                   setQ('');
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] hover:bg-bg',
+                  'flex w-full items-center gap-1.5 px-2 py-1 text-left text-[10px] hover:bg-bg',
                   value === '' && 'bg-accent-soft',
                 )}
               >
                 <Check
-                  className={cn('size-3.5 shrink-0', value === '' ? 'text-accent' : 'text-transparent')}
+                  className={cn('size-3 shrink-0', value === '' ? 'text-accent' : 'text-transparent')}
                 />
                 <span className="truncate text-ink">All Capabilities</span>
               </button>
@@ -100,27 +100,27 @@ export function CapabilitySelect({
                     setQ('');
                   }}
                   className={cn(
-                    'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] hover:bg-bg',
+                    'flex w-full items-center gap-1.5 px-2 py-1 text-left text-[10px] hover:bg-bg',
                     r.specialty === value && 'bg-accent-soft',
                   )}
                 >
                   <Check
                     className={cn(
-                      'size-3.5 shrink-0',
+                      'size-3 shrink-0',
                       r.specialty === value ? 'text-accent' : 'text-transparent',
                     )}
                   />
                   <span className="truncate text-ink">
                     {displaySpecialty(r.specialty, r.display_name)}
                   </span>
-                  <span className="mono ml-auto shrink-0 text-[10px] text-faint">
+                  <span className="mono ml-auto shrink-0 text-[9.5px] text-faint">
                     {compactNumber(r.facility_count)}
                   </span>
                 </button>
               </li>
             ))}
             {filtered.length === 0 && (
-              <li className="px-3 py-4 text-center text-xs text-muted">No matches</li>
+              <li className="px-3 py-3 text-center text-[10px] text-muted">No matches</li>
             )}
           </ul>
         </div>
@@ -131,7 +131,7 @@ export function CapabilitySelect({
 
 export function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mb-1 block text-[9px] font-semibold uppercase tracking-[0.08em] text-muted">
+    <span className="mb-0.5 block text-[8px] font-semibold uppercase tracking-[0.08em] text-muted">
       {children}
     </span>
   );

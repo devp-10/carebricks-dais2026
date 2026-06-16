@@ -13,10 +13,11 @@ export const CONFIDENCE_COPY: Record<string, string> = {
   demand_uncertain: 'Uncertain demand',
 };
 
-// Sequential risk ramp: quiet neutral -> amber -> terracotta -> crimson. Stops over gap 0..100.
+// Sequential risk ramp: sage green → gold → amber → terracotta → crimson. Stops over gap 0..100.
 export const RISK_STOPS: Array<[number, string]> = [
-  [0, '#B8CDB4'],
-  [40, '#F0B84F'],
+  [0,  '#C5DFB8'],
+  [25, '#EDD87A'],
+  [50, '#F0A040'],
   [70, '#D96B3D'],
   [85, '#B83A3A'],
 ];
