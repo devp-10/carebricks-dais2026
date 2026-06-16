@@ -8,7 +8,7 @@ import { matchDistrictFeature, type GeoFeatureLite } from '../../lib/geo/matchDi
 import { aggregateToStates } from '../../lib/geo/aggregate';
 import { DATA_POOR_HEX, FACILITY_DOT_HEX, NO_DATA_HEX, riskHex } from '../../lib/labels';
 import { groupEvidence } from '../../lib/group';
-import { featureStateFor, stateFeatureState } from './choropleth';
+import { featureStateFor, stateFeatureState, type FeatureGapState } from './choropleth';
 import { Breadcrumb } from './Breadcrumb';
 import { Legend } from './Legend';
 
@@ -64,9 +64,7 @@ function pathFor(feature: Feature, bounds: Bounds): string {
 
   if (geom.type === 'Polygon') return (geom.coordinates as number[][][]).map(ringPath).join('');
   if (geom.type === 'MultiPolygon') {
-    return (geom.coordinates as number[][][][])
-      .map((poly) => poly.map(ringPath).join(''))
-      .join('');
+    return (geom.coordinates as number[][][][]).map((poly) => poly.map(ringPath).join('')).join('');
   }
   return '';
 }
@@ -115,10 +113,7 @@ export function MapPanel({
     return m;
   }, [states]);
 
-  const stateRows = useMemo(
-    () => (view.state ? rows.filter((r) => r.state === view.state) : rows),
-    [rows, view.state],
-  );
+  const stateRows = useMemo(() => (view.state ? rows.filter((r) => r.state === view.state) : rows), [rows, view.state]);
 
   const districtFeatures = useMemo<GeoFeatureLite[]>(() => {
     if (!districtsGeo) return [];
@@ -143,7 +138,7 @@ export function MapPanel({
     return matchDistrictFeature(view.district, view.state, districtFeatures)?.district ?? null;
   }, [districtFeatures, view.district, view.state]);
 
-  const features = view.level === 'national' ? statesGeo?.features ?? [] : districtsGeo?.features ?? [];
+  const features = view.level === 'national' ? (statesGeo?.features ?? []) : (districtsGeo?.features ?? []);
   const boundsFeatures = useMemo(() => {
     if (view.level !== 'district' || !selectedGeoDistrict) return features;
     const selected = features.filter((f) => String(f.properties?.NAME_2 ?? '') === selectedGeoDistrict);
@@ -160,11 +155,11 @@ export function MapPanel({
     }));
   }, [bounds, features, view.level]);
 
-  const stateFill = useMemo(() => {
-    const m = new Map<string, string>();
+  const stateGapState = useMemo(() => {
+    const m = new Map<string, FeatureGapState>();
     for (const agg of aggregateToStates(rows)) {
-      const fill = gapFill(stateFeatureState(agg.maxGap, agg.dataPoorShare, agg.districtCount));
-      for (const geoName of geoStateNames(agg.state)) m.set(geoName, fill);
+      const gapState = stateFeatureState(agg.maxGap, agg.dataPoorShare, agg.districtCount);
+      for (const geoName of geoStateNames(agg.state)) m.set(geoName, gapState);
     }
     return m;
   }, [rows]);
@@ -172,14 +167,14 @@ export function MapPanel({
   const facilities = useMemo(
     () =>
       groupEvidence(evidence).filter(
-        (f) => finiteCoordinate(f.latitude) !== null && finiteCoordinate(f.longitude) !== null,
+        (f) => finiteCoordinate(f.latitude) !== null && finiteCoordinate(f.longitude) !== null
       ),
-    [evidence],
+    [evidence]
   );
 
   return (
     <div className="relative flex h-full flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-2.5">
+      <div className="flex items-center justify-between gap-3 border-b border-line bg-surface-2 px-4 py-2.5">
         <Breadcrumb view={view} onNational={onNational} onState={onBackToState} />
         {view.level !== 'national' && (
           <button
@@ -194,7 +189,7 @@ export function MapPanel({
         )}
       </div>
 
-      <div className="relative min-h-0 flex-1 bg-[#f1efe9]">
+      <div className="relative min-h-0 flex-1 bg-map-bg">
         {!bounds || paths.length === 0 ? (
           <div className="absolute inset-0 grid place-items-center bg-bg-sunken p-6 text-center">
             <span className="text-xs text-muted">Loading geography…</span>
@@ -207,22 +202,27 @@ export function MapPanel({
             role="img"
             aria-label="Coverage map"
           >
-            <rect width={W} height={H} fill="#f1efe9" />
+            <rect width={W} height={H} fill="var(--color-map-bg)" />
+            <defs>
+              <pattern id="dataPoorHatch" width="8" height="8" patternUnits="userSpaceOnUse">
+                <rect width="8" height="8" fill={DATA_POOR_HEX} />
+                <path d="M-2,8 L8,-2 M2,10 L10,2" stroke="var(--color-faint)" strokeWidth="1.2" opacity="0.75" />
+              </pattern>
+            </defs>
             {paths.map(({ path, name, index }) => {
               const row = view.level === 'national' ? null : geoDistrictToRow.get(name);
               const selected =
                 view.level === 'district' && selectedGeoDistrict !== null && name === selectedGeoDistrict;
-              const fill =
-                view.level === 'national'
-                  ? stateFill.get(name) ?? '#ECEAE3'
-                  : gapFill(row ? featureStateFor(row) : undefined);
+              const gapState =
+                view.level === 'national' ? stateGapState.get(name) : row ? featureStateFor(row) : undefined;
+              const fill = gapState?.dataPoor ? 'url(#dataPoorHatch)' : gapFill(gapState);
 
               return (
                 <path
                   key={`${name}-${index}`}
                   d={path}
                   fill={fill}
-                  stroke={selected ? '#16171b' : '#ffffff'}
+                  stroke={selected ? 'var(--color-ink)' : '#ffffff'}
                   strokeWidth={selected ? 2.6 : 1}
                   opacity={selected ? 0.98 : 0.88}
                   className="cursor-pointer transition-opacity hover:opacity-100"

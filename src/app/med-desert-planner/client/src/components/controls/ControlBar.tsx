@@ -22,15 +22,14 @@ export function ControlBar({
   return (
     <div
       aria-label="Planner filters"
-      className="flex flex-wrap items-end gap-x-3 gap-y-1.5 border-b border-line bg-surface-2 px-4 py-1.5"
+      className="flex flex-wrap items-end gap-x-4 gap-y-2 border-b border-line bg-surface-2 px-6 py-3"
     >
-      <CapabilitySelect
-        rows={specialties}
-        value={specialty}
-        onChange={onSpecialty}
-        loading={specialtiesLoading}
-      />
+      <CapabilitySelect rows={specialties} value={specialty} onChange={onSpecialty} loading={specialtiesLoading} />
       <RegionSelect rows={states} value={region} onChange={onRegion} />
+      <div className="ml-auto hidden pb-1 text-[12px] text-muted lg:block">
+        Burden: <span className="font-medium text-ink">NFHS-5 (2019-21)</span> · supply:{' '}
+        <span className="font-medium text-ink">facility records</span>
+      </div>
     </div>
   );
 }

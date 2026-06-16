@@ -10,13 +10,11 @@ export function FacilityList({
   evidence,
   loading,
   pingedFacility,
-  onShortlist,
   onReview,
 }: {
   evidence: EvidenceRow[];
   loading: boolean;
   pingedFacility: string | null;
-  onShortlist: (facilityId: string) => void;
   onReview: (claim: EvidenceRow, status: ReviewStatus) => Promise<void> | void;
 }) {
   const facilities = useMemo(() => groupEvidence(evidence), [evidence]);
@@ -43,13 +41,7 @@ export function FacilityList({
   return (
     <div className="space-y-2">
       {facilities.map((f) => (
-        <FacilityCard
-          key={f.facility_id}
-          facility={f}
-          pinged={pingedFacility === f.facility_id}
-          onShortlist={onShortlist}
-          onReview={onReview}
-        />
+        <FacilityCard key={f.facility_id} facility={f} pinged={pingedFacility === f.facility_id} onReview={onReview} />
       ))}
     </div>
   );

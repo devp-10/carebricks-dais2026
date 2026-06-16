@@ -21,13 +21,13 @@ export function InsightRail({
   onToggleFlag: (row: DistrictScore) => void;
 }) {
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-line p-3">
+    <div className="flex h-full min-h-0 flex-col bg-bg">
+      <div className="border-b border-line p-4">
         <KpiStrip rows={rows} />
       </div>
-      <div className="flex items-baseline justify-between px-4 py-2.5">
-        <h2 className="text-[13px] font-semibold text-ink">Ranked districts</h2>
-        <span className="text-[11px] text-muted">highest-risk first</span>
+      <div className="flex items-baseline justify-between px-5 py-3">
+        <h2 className="text-[16px] font-semibold text-ink">Ranked districts</h2>
+        <span className="text-[11.5px] text-muted">highest-risk first</span>
       </div>
       {error ? (
         <ErrorState message={error} />

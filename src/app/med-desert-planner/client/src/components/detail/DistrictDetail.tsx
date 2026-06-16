@@ -1,10 +1,8 @@
 import { ArrowLeft, Flag } from 'lucide-react';
-import type { DemandDetail, DistrictScore, EvidenceRow } from '../../types';
+import type { DistrictScore, EvidenceRow } from '../../types';
 import { VERDICT, isDataPoor } from '../../lib/labels';
 import { ErrorState } from '../common/States';
 import { cn } from '../../lib/utils';
-import { DemandContext } from './DemandContext';
-import { SupplyBand } from './SupplyBand';
 import { GapRealQuadrant } from './GapRealQuadrant';
 import { FacilityList } from './FacilityList';
 
@@ -25,7 +23,6 @@ function VerdictBadge({ row }: { row: DistrictScore }) {
 
 export function DistrictDetail({
   row,
-  demand,
   evidence,
   loading,
   error,
@@ -33,11 +30,9 @@ export function DistrictDetail({
   pingedFacility,
   onClose,
   onToggleFlag,
-  onShortlist,
   onReview,
 }: {
   row: DistrictScore;
-  demand: DemandDetail | null;
   evidence: EvidenceRow[];
   loading: boolean;
   error?: string | null;
@@ -45,12 +40,11 @@ export function DistrictDetail({
   pingedFacility: string | null;
   onClose: () => void;
   onToggleFlag: () => void;
-  onShortlist: (facilityId: string) => void;
   onReview: (claim: EvidenceRow, status: ReviewStatus) => Promise<void> | void;
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col bg-bg">
-      <div className="flex items-center gap-2 border-b border-line bg-surface px-4 py-3">
+      <div className="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3">
         <button
           type="button"
           onClick={onClose}
@@ -70,7 +64,7 @@ export function DistrictDetail({
           title={flagged ? 'Unflag' : 'Flag for scenario'}
           className={cn(
             'grid size-8 shrink-0 place-items-center rounded-[var(--radius-sm)] border transition-colors',
-            flagged ? 'border-accent bg-accent text-white' : 'border-line text-muted hover:text-ink',
+            flagged ? 'border-accent bg-accent text-white' : 'border-line text-muted hover:text-ink'
           )}
         >
           <Flag className="size-4" />
@@ -78,8 +72,6 @@ export function DistrictDetail({
       </div>
 
       <div className="min-h-0 flex-1 space-y-3 overflow-auto p-4">
-        <DemandContext demand={demand} loading={loading} />
-        <SupplyBand row={row} />
         <GapRealQuadrant row={row} />
 
         <div className="pt-1">
@@ -90,13 +82,7 @@ export function DistrictDetail({
           {error ? (
             <ErrorState message={error} />
           ) : (
-            <FacilityList
-              evidence={evidence}
-              loading={loading}
-              pingedFacility={pingedFacility}
-              onShortlist={onShortlist}
-              onReview={onReview}
-            />
+            <FacilityList evidence={evidence} loading={loading} pingedFacility={pingedFacility} onReview={onReview} />
           )}
         </div>
       </div>

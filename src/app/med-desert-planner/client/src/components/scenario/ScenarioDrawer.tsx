@@ -142,16 +142,12 @@ export function ScenarioDrawer({
             </button>
           </div>
           {activeScenarioId && (
-            <p className="text-[11px] text-muted">
-              Active scenario — facilities you shortlist and claims you review attach here.
-            </p>
+            <p className="text-[11px] text-muted">Active scenario — flagged districts and claim reviews attach here.</p>
           )}
 
           {scenarios.length > 0 && (
             <div className="border-t border-line pt-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.09em] text-muted">
-                Recent scenarios
-              </p>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.09em] text-muted">Recent scenarios</p>
               <div className="space-y-1.5">
                 {scenarios.slice(0, 6).map((s) => (
                   <button
@@ -162,17 +158,13 @@ export function ScenarioDrawer({
                       'flex w-full items-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-left',
                       s.scenario_id === activeScenarioId
                         ? 'border-accent bg-accent-soft'
-                        : 'border-line bg-surface hover:bg-bg',
+                        : 'border-line bg-surface hover:bg-bg'
                     )}
                   >
                     <Clock className="size-3.5 shrink-0 text-faint" />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[12.5px] font-medium text-ink">
-                        {s.name}
-                      </span>
-                      <span className="block truncate text-[10.5px] text-muted">
-                        {displaySpecialty(s.specialty)}
-                      </span>
+                      <span className="block truncate text-[12.5px] font-medium text-ink">{s.name}</span>
+                      <span className="block truncate text-[10.5px] text-muted">{displaySpecialty(s.specialty)}</span>
                     </span>
                   </button>
                 ))}

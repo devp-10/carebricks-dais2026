@@ -1,26 +1,20 @@
 import { useMemo } from 'react';
+import type { CSSProperties } from 'react';
 import { AlertTriangle, TrendingUp, Users, Activity } from 'lucide-react';
 import type { DistrictScore } from '../../types';
 import { numberValue, pct, score } from '../../lib/format';
 
-function Kpi({
-  icon,
-  value,
-  label,
-  tone,
-}: {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-  tone: string;
-}) {
+function Kpi({ icon, value, label, tone }: { icon: React.ReactNode; value: string; label: string; tone: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-[var(--radius)] border border-line bg-surface px-3.5 py-3">
-      <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-sm)]" style={{ background: `${tone}14`, color: tone }}>
+    <div className="flex items-center gap-3 rounded-[var(--radius)] border border-line bg-surface px-3.5 py-3 shadow-[0_1px_0_rgba(28,26,22,0.03)]">
+      <span
+        className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--kpi-tone)_12%,transparent)] text-[var(--kpi-tone)]"
+        style={{ '--kpi-tone': tone } as CSSProperties}
+      >
         {icon}
       </span>
       <div className="min-w-0">
-        <div className="mono text-[20px] font-semibold leading-none text-ink">{value}</div>
+        <div className="mono text-[20px] font-medium leading-none text-ink">{value}</div>
         <div className="mt-1 text-[10.5px] leading-tight text-muted">{label}</div>
       </div>
     </div>
@@ -51,25 +45,25 @@ export function KpiStrip({ rows }: { rows: DistrictScore[] }) {
         icon={<AlertTriangle className="size-[18px]" />}
         value={String(stats.confirmedGaps)}
         label="Confirmed gaps"
-        tone="#b23b3b"
+        tone="var(--color-bad)"
       />
       <Kpi
         icon={<TrendingUp className="size-[18px]" />}
         value={score(stats.avgGap)}
         label="Avg. gap score"
-        tone="#d96b3d"
+        tone="var(--color-risk-hi)"
       />
       <Kpi
         icon={<Users className="size-[18px]" />}
         value={score(stats.avgDemand)}
         label="Avg. demand score"
-        tone="#2f6bff"
+        tone="var(--color-accent)"
       />
       <Kpi
         icon={<Activity className="size-[18px]" />}
         value={pct(stats.avgSupply)}
         label="Avg. supply rate"
-        tone="#2e8b6f"
+        tone="var(--color-ok)"
       />
     </div>
   );

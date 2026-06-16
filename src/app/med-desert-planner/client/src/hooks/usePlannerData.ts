@@ -1,14 +1,7 @@
 import { useMemo } from 'react';
 import { useAnalyticsQuery } from '@databricks/appkit-ui/react';
 import { sql } from '@databricks/appkit-ui/js';
-import type {
-  SpecialtyRow,
-  StateRow,
-  ScenarioRow,
-  DistrictScore,
-  EvidenceRow,
-  DemandDetail,
-} from '../types';
+import type { SpecialtyRow, StateRow, ScenarioRow, DistrictScore, EvidenceRow } from '../types';
 
 const NONE = '__none__';
 
@@ -39,7 +32,7 @@ export function useDistrictScores(filters: PlannerFilters) {
       state: sql.string(filters.state || 'All states'),
       verdict: sql.string(filters.verdict || 'All verdicts'),
     }),
-    [filters.specialty, filters.state, filters.verdict],
+    [filters.specialty, filters.state, filters.verdict]
   );
   const { data = [], loading, error } = useAnalyticsQuery('district_scores', params);
   return { rows: (data ?? []) as DistrictScore[], loading, error };
@@ -47,37 +40,23 @@ export function useDistrictScores(filters: PlannerFilters) {
 
 export function useDistrictDetail(args: { specialty: string; state: string; district: string }) {
   const hasEvidence = Boolean(args.specialty && args.state);
-  const hasDemand = Boolean(args.state && args.district);
   const evidenceParams = useMemo(
     () => ({
       specialty: sql.string(hasEvidence ? args.specialty : NONE),
       state: sql.string(hasEvidence ? args.state : NONE),
       district: sql.string(hasEvidence ? args.district || '__all__' : NONE),
     }),
-    [hasEvidence, args.specialty, args.state, args.district],
+    [hasEvidence, args.specialty, args.state, args.district]
   );
-  const demandParams = useMemo(
-    () => ({
-      state: sql.string(hasDemand ? args.state : NONE),
-      district: sql.string(hasDemand ? args.district : NONE),
-    }),
-    [hasDemand, args.state, args.district],
-  );
-
   const {
     data: evidence = [],
     loading: evidenceLoading,
     error: evidenceError,
   } = useAnalyticsQuery('district_evidence', evidenceParams);
-  const { data: demand = [], loading: demandLoading } = useAnalyticsQuery(
-    'district_demand_detail',
-    demandParams,
-  );
 
   return {
     evidence: (evidence ?? []) as EvidenceRow[],
-    demand: ((demand ?? []) as DemandDetail[])[0] ?? null,
-    loading: evidenceLoading || demandLoading,
+    loading: evidenceLoading,
     error: evidenceError,
   };
 }

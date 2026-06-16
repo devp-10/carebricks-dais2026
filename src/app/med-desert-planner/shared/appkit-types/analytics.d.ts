@@ -98,6 +98,8 @@ declare module "@databricks/appkit-ui/react" {
           demand_label: string;
           /** @sqlType STRING */
           demand_evidence_label: string;
+          /** @sqlType BIGINT */
+          population: number;
           /** @sqlType INT */
           n_facilities: number;
           /** @sqlType INT */

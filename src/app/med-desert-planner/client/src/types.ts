@@ -1,11 +1,7 @@
 export type SpecialtyRow = { specialty: string; display_name: string; facility_count: number };
 export type StateRow = { state: string };
 
-export type VerdictLabel =
-  | 'likely_real_gap'
-  | 'data_poor_high_need'
-  | 'mixed_evidence'
-  | 'lower_priority';
+export type VerdictLabel = 'likely_real_gap' | 'data_poor_high_need' | 'mixed_evidence' | 'lower_priority';
 export type ConfidenceLabel = 'sufficient_evidence' | 'data_poor' | (string & {});
 
 export type DistrictScore = {
@@ -14,6 +10,7 @@ export type DistrictScore = {
   specialty: string;
   demand_score: number;
   demand_label: string;
+  population?: number | null;
   n_facilities: number;
   k_facilities: number;
   claim_count: number;

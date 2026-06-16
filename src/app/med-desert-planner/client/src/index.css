@@ -2,50 +2,50 @@
 @import '@databricks/appkit-ui/styles.css';
 
 /* ------------------------------------------------------------------ *
- * Design tokens — minimal, AI-era premium. Single blue accent.
+ * Design tokens — warm planner workspace inspired by the map prototype.
  * Gap risk = hue (warm ramp). Data confidence = texture/opacity.
  * ------------------------------------------------------------------ */
 @theme {
-  --color-bg: #f6f5f2;
-  --color-bg-sunken: #efeee9;
+  --color-bg: #f3efe6;
+  --color-bg-sunken: #ece8dd;
   --color-surface: #ffffff;
-  --color-surface-2: #fbfaf8;
-  --color-ink: #16171b;
-  --color-muted: #6b6f76;
-  --color-faint: #9aa0a8;
-  --color-line: #e7e5df;
-  --color-line-strong: #d8d5cd;
+  --color-surface-2: #fbf9f3;
+  --color-ink: #1c1a16;
+  --color-muted: #6f6a5f;
+  --color-faint: #a49d90;
+  --color-line: rgba(28, 26, 22, 0.12);
+  --color-line-strong: rgba(28, 26, 22, 0.22);
 
-  --color-accent: #2f6bff;
-  --color-accent-ink: #1e4fd8;
-  --color-accent-soft: #eaf0ff;
+  --color-accent: #13564f;
+  --color-accent-ink: #0c3a35;
+  --color-accent-soft: #dcebe7;
 
-  --color-risk-low: #d7dbd2;
-  --color-risk-mid: #f0b84f;
-  --color-risk-hi: #d96b3d;
-  --color-risk-max: #b83a3a;
-  --color-datapoor: #9aa1ab;
+  --color-risk-low: #d7decf;
+  --color-risk-mid: #dba958;
+  --color-risk-hi: #b06316;
+  --color-risk-max: #9e2b25;
+  --color-datapoor: #536588;
+  --color-map-bg: #e9eee9;
 
-  --color-ok: #2e8b6f;
-  --color-warn: #c98a2e;
-  --color-bad: #b23b3b;
+  --color-ok: #2f6b50;
+  --color-warn: #b06316;
+  --color-bad: #9e2b25;
 
-  --font-sans: 'Geist', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'Geist Mono', 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SFMono-Regular', monospace;
 
   --radius-lg: 14px;
-  --radius: 11px;
+  --radius: 10px;
   --radius-sm: 8px;
 
-  --shadow-card: 0 1px 2px rgba(20, 22, 26, 0.04), 0 8px 24px rgba(20, 22, 26, 0.06);
-  --shadow-pop: 0 8px 28px rgba(20, 22, 26, 0.14);
+  --shadow-card: 0 1px 2px rgba(28, 26, 22, 0.04), 0 8px 24px rgba(28, 26, 22, 0.06);
+  --shadow-pop: 0 10px 30px rgba(28, 26, 22, 0.14);
 }
 
 :root {
   color: var(--color-ink);
   background: var(--color-bg);
   font-family: var(--font-sans);
-  font-feature-settings: 'cv05' 1, 'ss01' 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -80,7 +80,7 @@ button {
 }
 
 ::selection {
-  background: var(--color-accent-soft);
+  background: #e9c7a0;
 }
 
 :focus-visible {

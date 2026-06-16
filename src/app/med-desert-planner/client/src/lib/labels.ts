@@ -15,16 +15,16 @@ export const CONFIDENCE_COPY: Record<string, string> = {
 
 // Sequential risk ramp: sage green → gold → amber → terracotta → crimson. Stops over gap 0..100.
 export const RISK_STOPS: Array<[number, string]> = [
-  [0,  '#C5DFB8'],
-  [25, '#EDD87A'],
-  [50, '#F0A040'],
-  [70, '#D96B3D'],
-  [85, '#B83A3A'],
+  [0, '#d7decf'],
+  [25, '#e7cf8b'],
+  [50, '#dba958'],
+  [70, '#b06316'],
+  [85, '#9e2b25'],
 ];
 
-export const DATA_POOR_HEX = '#C8A96A';
-export const NO_DATA_HEX = '#ECEAE3';
-export const FACILITY_DOT_HEX = '#2f6bff';
+export const DATA_POOR_HEX = '#d8dbd2';
+export const NO_DATA_HEX = '#eceae2';
+export const FACILITY_DOT_HEX = '#13564f';
 
 export function riskHex(gap: number | null | undefined): string {
   if (gap === null || gap === undefined || Number.isNaN(gap)) return DATA_POOR_HEX;
@@ -41,17 +41,16 @@ export type TrustTier = 'strong' | 'partial' | 'weak' | 'no_claim';
 
 export function trustTier(sourceField: string): TrustTier {
   if (sourceField === 'specialties') return 'strong';
-  if (sourceField === 'capability' || sourceField === 'procedure' || sourceField === 'equipment')
-    return 'partial';
+  if (sourceField === 'capability' || sourceField === 'procedure' || sourceField === 'equipment') return 'partial';
   if (sourceField === 'description') return 'weak';
   return 'no_claim';
 }
 
 export const TRUST_HEX: Record<TrustTier, string> = {
-  strong: '#2E8B6F',
-  partial: '#C98A2E',
-  weak: '#B23B3B',
-  no_claim: '#9AA1AB',
+  strong: '#2f6b50',
+  partial: '#b06316',
+  weak: '#9e2b25',
+  no_claim: '#8a857a',
 };
 
 export const TRUST_COPY: Record<TrustTier, string> = {

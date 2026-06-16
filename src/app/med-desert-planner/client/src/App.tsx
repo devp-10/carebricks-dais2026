@@ -5,7 +5,7 @@ import type { DistrictScore, EvidenceRow, ScenarioRow, ViewState } from './types
 import { districtKey } from './types';
 import { useReferenceData, useDistrictScores, useDistrictDetail } from './hooks/usePlannerData';
 import { useGeoData } from './hooks/useGeoData';
-import { saveScenario, shortlistFacility, reviewClaim } from './api/persistence';
+import { saveScenario, reviewClaim } from './api/persistence';
 import { AppBar, type SaveState } from './components/AppBar';
 import { ControlBar } from './components/controls/ControlBar';
 import { InsightRail } from './components/rail/InsightRail';
@@ -35,7 +35,11 @@ export default function App() {
 
   const effectiveSpecialty = specialty || 'All capabilities';
 
-  const { rows, loading: scoresLoading, error: scoresError } = useDistrictScores({
+  const {
+    rows,
+    loading: scoresLoading,
+    error: scoresError,
+  } = useDistrictScores({
     specialty: effectiveSpecialty,
     state: region,
     verdict,
@@ -43,7 +47,7 @@ export default function App() {
 
   const selectedRow = useMemo(
     () => rows.find((r) => districtKey(r.state, r.district_name, r.specialty) === selectedKey) ?? null,
-    [rows, selectedKey],
+    [rows, selectedKey]
   );
 
   const detail = useDistrictDetail({
@@ -69,7 +73,7 @@ export default function App() {
       setView({ level: 'state', state: dataState, district: null });
       void loadDistricts(dataState);
     },
-    [loadDistricts],
+    [loadDistricts]
   );
 
   const selectDistrict = useCallback(
@@ -81,7 +85,7 @@ export default function App() {
       setSelectedKey(districtKey(row.state, row.district_name, row.specialty));
       setView({ level: 'district', state: row.state, district: row.district_name });
     },
-    [region, loadDistricts],
+    [region, loadDistricts]
   );
 
   const closeDetail = useCallback(() => {
@@ -137,28 +141,6 @@ export default function App() {
     }
   }, [effectiveSpecialty, scenarioName, scenarioNotes, region, verdict, flaggedRows]);
 
-  const handleShortlist = useCallback(
-    async (facilityId: string) => {
-      if (!activeScenarioId) {
-        setScenarioOpen(true);
-        flash('error', 'Save a scenario before shortlisting');
-        return;
-      }
-      flash('saving', 'Adding to shortlist…');
-      try {
-        await shortlistFacility({
-          scenario_id: activeScenarioId,
-          facility_id: facilityId,
-          note: `Shortlisted from ${selectedRow?.district_name ?? 'district'} review`,
-        });
-        flash('saved', 'Facility shortlisted');
-      } catch (e) {
-        flash('error', e instanceof Error ? e.message : 'Shortlist failed');
-      }
-    },
-    [activeScenarioId, selectedRow],
-  );
-
   const handleReview = useCallback(
     async (claim: EvidenceRow, status: ReviewStatus) => {
       if (!activeScenarioId) {
@@ -181,7 +163,7 @@ export default function App() {
         throw e;
       }
     },
-    [activeScenarioId],
+    [activeScenarioId]
   );
 
   const loadScenario = useCallback((s: ScenarioRow) => {
@@ -193,7 +175,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden bg-bg">
       <AppBar saveState={saveState} saveMessage={saveMessage} />
       <ControlBar
         specialties={specialties}
@@ -208,7 +190,10 @@ export default function App() {
       <main className="min-h-0 flex-1">
         <PanelGroup direction="horizontal" className="h-full">
           <Panel defaultSize={42} minSize={28} maxSize={58} className="min-h-0 overflow-hidden">
-            <section aria-label="Coverage map" className="relative h-full min-h-0 overflow-hidden">
+            <section
+              aria-label="Coverage map"
+              className="relative h-full min-h-0 overflow-hidden border-r border-line bg-[linear-gradient(180deg,#eef4f3,#eae6dd)]"
+            >
               <MapPanel
                 view={view}
                 states={states}
@@ -230,11 +215,10 @@ export default function App() {
           </PanelResizeHandle>
 
           <Panel defaultSize={58} minSize={42} className="min-h-0 overflow-hidden">
-            <section aria-label="District ranking" className="h-full min-h-0 overflow-hidden">
+            <section aria-label="District ranking" className="h-full min-h-0 overflow-hidden bg-bg">
               {selectedRow ? (
                 <DistrictDetail
                   row={selectedRow}
-                  demand={detail.demand}
                   evidence={detail.evidence}
                   loading={detail.loading}
                   error={detail.error}
@@ -242,7 +226,6 @@ export default function App() {
                   pingedFacility={pingedFacility}
                   onClose={closeDetail}
                   onToggleFlag={() => toggleFlag(selectedRow)}
-                  onShortlist={(id) => void handleShortlist(id)}
                   onReview={handleReview}
                 />
               ) : (
