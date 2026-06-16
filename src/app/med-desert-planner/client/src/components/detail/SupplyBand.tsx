@@ -9,7 +9,7 @@ export function SupplyBand({ row }: { row: DistrictScore }) {
     <div className="rounded-[var(--radius)] border border-line bg-surface p-3.5">
       <div className="mb-2 flex items-baseline justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted">
-          Documented supply
+          Supply
         </span>
         <span className="mono text-[13px] font-semibold text-ink">
           {pct(row.documented_supply_rate)}
@@ -32,7 +32,7 @@ export function SupplyBand({ row }: { row: DistrictScore }) {
       <div className="mt-2 flex items-center justify-between text-[11px] text-muted">
         <span>
           <span className="mono text-ink">{row.k_facilities}</span> of{' '}
-          <span className="mono text-ink">{row.n_facilities}</span> facilities documented
+          <span className="mono text-ink">{row.n_facilities}</span> facilities on record
         </span>
         <span className="mono text-faint">
           95% CI {pct(row.wilson_lo)}–{pct(row.wilson_hi)}

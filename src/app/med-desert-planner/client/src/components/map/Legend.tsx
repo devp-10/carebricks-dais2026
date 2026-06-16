@@ -27,16 +27,16 @@ export function Legend({ showFacilities }: { showFacilities: boolean }) {
       {/* confidence = texture */}
       <div>
         <p className="mb-1 text-[9.5px] font-semibold uppercase tracking-[0.07em] text-muted">
-          Evidence quality
+          Data confidence
         </p>
         <div className="flex items-center gap-2 text-[10px] text-muted">
           <span className="flex items-center gap-1">
             <span className="hatch size-3 rounded-[3px] border border-line" style={{ background: DATA_POOR_HEX }} />
-            Low evidence
+            Few facility records
           </span>
           <span className="flex items-center gap-1">
             <span className="size-3 rounded-[3px] border border-line" style={{ background: NO_DATA_HEX }} />
-            No matched data
+            No data
           </span>
         </div>
       </div>
@@ -45,7 +45,7 @@ export function Legend({ showFacilities }: { showFacilities: boolean }) {
       {showFacilities && (
         <div>
           <p className="mb-1 text-[9.5px] font-semibold uppercase tracking-[0.07em] text-muted">
-            Documented supply
+            Supply
           </p>
           <div className="flex items-center gap-2 text-[10px] text-muted">
             {(Object.keys(TRUST_HEX) as TrustTier[])

@@ -50,8 +50,8 @@ export function DemandContext({
       </div>
 
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        <QualityChip n={demand.usable_indicator_count} label="usable" tone="#2e8b6f" />
-        <QualityChip n={demand.low_sample_indicator_count} label="low-sample" tone="#c98a2e" />
+        <QualityChip n={demand.usable_indicator_count} label="reliable" tone="#2e8b6f" />
+        <QualityChip n={demand.low_sample_indicator_count} label="limited sample" tone="#c98a2e" />
         <QualityChip n={demand.suppressed_indicator_count} label="suppressed" tone="#b23b3b" />
       </div>
     </div>

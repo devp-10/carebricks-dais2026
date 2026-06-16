@@ -1,16 +1,16 @@
 import type { VerdictLabel, ConfidenceLabel } from '../types';
 
 export const VERDICT: Record<VerdictLabel, { copy: string; rank: number; tone: string }> = {
-  likely_real_gap: { copy: 'Likely real gap', rank: 0, tone: 'risk-high' },
-  data_poor_high_need: { copy: 'Data-poor high need', rank: 1, tone: 'data-poor' },
-  mixed_evidence: { copy: 'Mixed evidence', rank: 2, tone: 'risk-mid' },
-  lower_priority: { copy: 'Lower priority', rank: 3, tone: 'risk-low' },
+  likely_real_gap: { copy: 'Confirmed gap', rank: 0, tone: 'risk-high' },
+  data_poor_high_need: { copy: 'Likely high demand', rank: 1, tone: 'data-poor' },
+  mixed_evidence: { copy: 'Mixed signals', rank: 2, tone: 'risk-mid' },
+  lower_priority: { copy: 'Lower demand', rank: 3, tone: 'risk-low' },
 };
 
 export const CONFIDENCE_COPY: Record<string, string> = {
-  sufficient_evidence: 'Sufficient evidence',
-  data_poor: 'Low evidence',
-  demand_uncertain: 'Demand uncertain',
+  sufficient_evidence: 'Confirmed',
+  data_poor: 'Unverified',
+  demand_uncertain: 'Uncertain demand',
 };
 
 // Sequential risk ramp: quiet neutral -> amber -> terracotta -> crimson. Stops over gap 0..100.
@@ -21,7 +21,7 @@ export const RISK_STOPS: Array<[number, string]> = [
   [85, '#B83A3A'],
 ];
 
-export const DATA_POOR_HEX = '#9AA1AB';
+export const DATA_POOR_HEX = '#C8A96A';
 export const NO_DATA_HEX = '#ECEAE3';
 
 export function riskHex(gap: number | null | undefined): string {
@@ -53,8 +53,8 @@ export const TRUST_HEX: Record<TrustTier, string> = {
 };
 
 export const TRUST_COPY: Record<TrustTier, string> = {
-  strong: 'Strong claim',
-  partial: 'Partial claim',
-  weak: 'Weak claim',
-  no_claim: 'No claim',
+  strong: 'High confidence',
+  partial: 'Medium confidence',
+  weak: 'Low confidence',
+  no_claim: 'Not documented',
 };
