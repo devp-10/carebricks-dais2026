@@ -13,7 +13,7 @@ export function AppBar({ saveState, saveMessage }: { saveState: SaveState; saveM
   return (
     <header className="flex items-center justify-between gap-4 border-b border-line bg-surface/80 px-5 py-3 backdrop-blur-sm">
       <div className="flex items-center gap-2.5">
-        <img src="/assets/carebricks-logo.svg" alt="" className="size-7 shrink-0" />
+        <img src="/assets/carebricks-logo.png" alt="" className="size-7 shrink-0" />
         <h1
           className="text-[22px] font-black leading-none text-accent"
           style={{ fontFamily: '"Avenir Next", "Trebuchet MS", ui-sans-serif, system-ui, sans-serif' }}
