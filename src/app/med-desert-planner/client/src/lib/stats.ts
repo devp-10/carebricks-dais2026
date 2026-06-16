@@ -19,14 +19,14 @@ export function quadrant(gapScore: number, confident: boolean): Quadrant {
 
 export const QUADRANT_COPY: Record<Quadrant, string> = {
   act_now: 'Act now',
-  collect_data: 'Go collect data',
+  collect_data: 'Needs assessment',
   covered: 'Covered',
   lower_priority: 'Lower priority',
 };
 
 export const QUADRANT_BLURB: Record<Quadrant, string> = {
-  act_now: 'High need and the evidence holds. A real priority for outreach.',
-  collect_data: 'High need, but the records are too thin to trust. Verify before deploying.',
-  covered: 'Documented supply looks adequate relative to need. Lower priority.',
-  lower_priority: 'Lower modelled need. Not a near-term focus.',
+  act_now: 'High demand and the evidence holds. A real priority for outreach.',
+  collect_data: 'High demand, but records are too thin to trust. Verify on the ground before deploying.',
+  covered: 'Supply looks adequate relative to demand. Lower priority.',
+  lower_priority: 'Lower demand signal. Not a near-term focus.',
 };

@@ -84,8 +84,8 @@ export function DistrictDetail({
 
         <div className="pt-1">
           <div className="mb-2 flex items-baseline justify-between">
-            <h3 className="text-[13px] font-semibold text-ink">Facility evidence</h3>
-            <span className="text-[11px] text-muted">verbatim source claims</span>
+            <h3 className="text-[13px] font-semibold text-ink">Source records</h3>
+            <span className="text-[11px] text-muted">from original sources</span>
           </div>
           {error ? (
             <ErrorState message={error} />

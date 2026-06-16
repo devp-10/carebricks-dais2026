@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { AlertTriangle, HelpCircle, Layers, Activity } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Users, Activity } from 'lucide-react';
 import type { DistrictScore } from '../../types';
-import { numberValue, pct } from '../../lib/format';
+import { numberValue, pct, score } from '../../lib/format';
 
 function Kpi({
   icon,
@@ -27,20 +27,23 @@ function Kpi({
   );
 }
 
+function avg(vals: number[]): number | null {
+  return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+}
+
 export function KpiStrip({ rows }: { rows: DistrictScore[] }) {
   const stats = useMemo(() => {
-    const count = (v: string) => rows.filter((r) => r.verdict_label === v).length;
-    const supplyRates = rows
-      .map((r) => numberValue(r.documented_supply_rate))
-      .filter((v): v is number => v !== null);
-    const avgSupply = supplyRates.length
-      ? supplyRates.reduce((s, v) => s + v, 0) / supplyRates.length
-      : null;
+    const confirmedGaps = rows.filter((r) => r.verdict_label === 'likely_real_gap').length;
+
+    const gapScores = rows.map((r) => numberValue(r.gap_score)).filter((v): v is number => v !== null);
+    const demandScores = rows.map((r) => numberValue(r.demand_score)).filter((v): v is number => v !== null);
+    const supplyRates = rows.map((r) => numberValue(r.documented_supply_rate)).filter((v): v is number => v !== null);
+
     return {
-      realGaps: count('likely_real_gap'),
-      dataPoor: count('data_poor_high_need'),
-      inView: rows.length,
-      avgSupply,
+      confirmedGaps,
+      avgGap: avg(gapScores),
+      avgDemand: avg(demandScores),
+      avgSupply: avg(supplyRates),
     };
   }, [rows]);
 
@@ -48,26 +51,26 @@ export function KpiStrip({ rows }: { rows: DistrictScore[] }) {
     <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
       <Kpi
         icon={<AlertTriangle className="size-[18px]" />}
-        value={String(stats.realGaps)}
-        label="Likely real gaps"
+        value={String(stats.confirmedGaps)}
+        label="Confirmed gaps"
         tone="#b23b3b"
       />
       <Kpi
-        icon={<HelpCircle className="size-[18px]" />}
-        value={String(stats.dataPoor)}
-        label="Data-poor high need"
-        tone="#c98a2e"
+        icon={<TrendingUp className="size-[18px]" />}
+        value={score(stats.avgGap)}
+        label="Avg. gap score"
+        tone="#d96b3d"
       />
       <Kpi
-        icon={<Layers className="size-[18px]" />}
-        value={String(stats.inView)}
-        label="Districts in view"
+        icon={<Users className="size-[18px]" />}
+        value={score(stats.avgDemand)}
+        label="Avg. demand score"
         tone="#2f6bff"
       />
       <Kpi
         icon={<Activity className="size-[18px]" />}
         value={pct(stats.avgSupply)}
-        label="Avg documented supply"
+        label="Avg. supply rate"
         tone="#2e8b6f"
       />
     </div>

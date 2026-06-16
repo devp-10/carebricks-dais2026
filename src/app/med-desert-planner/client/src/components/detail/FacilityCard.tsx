@@ -45,7 +45,7 @@ export function FacilityCard({
           </span>
         </button>
         <span className="mono shrink-0 rounded-full bg-bg-sunken px-2 py-0.5 text-[10.5px] text-muted">
-          {facility.claims.length} claim{facility.claims.length !== 1 ? 's' : ''}
+          {facility.claims.length} record{facility.claims.length !== 1 ? 's' : ''}
         </span>
         <button
           type="button"

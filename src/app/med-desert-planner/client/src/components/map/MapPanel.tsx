@@ -6,7 +6,7 @@ import { normalizeName } from '../../lib/geo/normalize';
 import { geoStateNames } from '../../lib/geo/states';
 import { matchDistrictFeature, type GeoFeatureLite } from '../../lib/geo/matchDistrict';
 import { aggregateToStates } from '../../lib/geo/aggregate';
-import { DATA_POOR_HEX, NO_DATA_HEX, riskHex, trustTier, TRUST_HEX } from '../../lib/labels';
+import { DATA_POOR_HEX, NO_DATA_HEX, FACILITY_DOT_HEX, riskHex } from '../../lib/labels';
 import { groupEvidence } from '../../lib/group';
 import { featureStateFor, stateFeatureState } from './choropleth';
 import { Breadcrumb } from './Breadcrumb';
@@ -144,12 +144,8 @@ export function MapPanel({
   }, [districtFeatures, view.district, view.state]);
 
   const features = view.level === 'national' ? statesGeo?.features ?? [] : districtsGeo?.features ?? [];
-  const boundsFeatures = useMemo(() => {
-    if (view.level !== 'district' || !selectedGeoDistrict) return features;
-    const selected = features.filter((f) => String(f.properties?.NAME_2 ?? '') === selectedGeoDistrict);
-    return selected.length ? selected : features;
-  }, [features, selectedGeoDistrict, view.level]);
-  const bounds = useMemo(() => boundsOf(boundsFeatures), [boundsFeatures]);
+  const boundsFeatures = features;
+  const bounds = useMemo(() => boundsOf(features), [features]);
   const paths = useMemo(() => {
     if (!bounds) return [];
     return features.map((feature, index) => ({
@@ -246,20 +242,13 @@ export function MapPanel({
                 const longitude = finiteCoordinate(facility.longitude);
                 if (latitude === null || longitude === null) return null;
                 const p = project(longitude, latitude, bounds);
-                const best = facility.claims
-                  .map((c) => trustTier(c.source_field))
-                  .sort(
-                    (a, b) =>
-                      ['strong', 'partial', 'weak', 'no_claim'].indexOf(a) -
-                      ['strong', 'partial', 'weak', 'no_claim'].indexOf(b),
-                  )[0];
                 return (
                   <circle
                     key={facility.facility_id}
                     cx={p.x}
                     cy={p.y}
                     r={7}
-                    fill={TRUST_HEX[best]}
+                    fill={FACILITY_DOT_HEX}
                     stroke="#ffffff"
                     strokeWidth={2}
                     className="cursor-pointer"
