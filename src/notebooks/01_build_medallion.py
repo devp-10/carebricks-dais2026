@@ -18,6 +18,16 @@ def run(sql: str) -> None:
     spark.sql(sql)
 
 
+def canonical_state_expr(column: str) -> str:
+    return f"""CASE
+      WHEN lower(trim({column})) = 'maharastra' THEN 'Maharashtra'
+      WHEN lower(trim({column})) = 'nct of delhi' THEN 'Delhi'
+      WHEN lower(trim({column})) IN ('jammu & kashmir', 'jammu and kashmir') THEN 'Jammu and Kashmir'
+      WHEN lower(trim({column})) = 'andaman & nicobar islands' THEN 'Andaman and Nicobar'
+      ELSE trim({column})
+    END"""
+
+
 # COMMAND ----------
 
 for schema in ["bronze", "silver", "gold", "app"]:
@@ -130,6 +140,37 @@ CREATE TABLE IF NOT EXISTS {CATALOG}.silver.district_alias_map (
 ) USING DELTA
 """)
 
+run(f"""
+MERGE INTO {CATALOG}.silver.district_alias_map target
+USING (
+  SELECT * FROM VALUES
+    ('Budgam', 'Jammu And Kashmir', 'Badgam', 'Jammu and Kashmir', 'seeded_alias', 'system', 'NFHS-5 uses Badgam; PIN directory uses Budgam'),
+    ('Baramulla', 'Jammu And Kashmir', 'Baramula', 'Jammu and Kashmir', 'seeded_alias', 'system', 'NFHS-5 uses Baramula; PIN directory uses Baramulla')
+  AS aliases(district_raw, state_raw, district_nfhs5, state_nfhs5, match_status, reviewed_by, note)
+) source
+ON lower(target.district_raw) = lower(source.district_raw)
+ AND lower(target.state_raw) = lower(source.state_raw)
+WHEN NOT MATCHED THEN INSERT (
+  district_raw,
+  state_raw,
+  district_nfhs5,
+  state_nfhs5,
+  match_status,
+  reviewed_by,
+  reviewed_at,
+  note
+) VALUES (
+  source.district_raw,
+  source.state_raw,
+  source.district_nfhs5,
+  source.state_nfhs5,
+  source.match_status,
+  source.reviewed_by,
+  current_timestamp(),
+  source.note
+)
+""")
+
 
 # COMMAND ----------
 # Silver: clean NFHS-5 to long indicator table with quality flags.
@@ -139,7 +180,7 @@ CREATE OR REPLACE TABLE {CATALOG}.silver.nfhs5_clean AS
 WITH src AS (
   SELECT
     trim(district_name) AS district_nfhs5,
-    trim(state_ut) AS state_nfhs5,
+    {canonical_state_expr("state_ut")} AS state_nfhs5,
     stack(
       12,
       'institutional_birth_5y_pct', cast(institutional_birth_5y_pct AS string), 'low_is_need',
@@ -195,7 +236,7 @@ FROM {CATALOG}.bronze.district_population
 run(f"""
 CREATE OR REPLACE TABLE {CATALOG}.silver.state_population_clean AS
 SELECT
-  trim(state_ut_name) AS state_nfhs5,
+  {canonical_state_expr("state_ut_name")} AS state_nfhs5,
   type,
   population_millions,
   current_timestamp() AS created_at
@@ -223,9 +264,9 @@ dup AS (
 nfhs_keys AS (
   SELECT DISTINCT
     lower(trim(district_name)) AS district_key,
-    lower(trim(state_ut)) AS state_key,
+    lower({canonical_state_expr("state_ut")}) AS state_key,
     trim(district_name) AS district_nfhs5,
-    trim(state_ut) AS state_nfhs5
+    {canonical_state_expr("state_ut")} AS state_nfhs5
   FROM {CATALOG}.bronze.nfhs_5_district_health_indicators
 ),
 base AS (
@@ -611,12 +652,12 @@ SELECT
     ELSE demand_score * (1.0 - least(1.0, center + half_width))
   END AS gap_score,
   CASE
-    WHEN district_nfhs5 = 'Unresolved' OR n_facilities < 5 OR (2 * half_width) > 0.5 THEN 'data_poor'
+    WHEN district_nfhs5 = 'Unresolved' OR n_facilities < 5 OR (2 * half_width) > 0.6 THEN 'data_poor'
     WHEN demand_quality_label <> 'usable' THEN 'demand_uncertain'
     ELSE 'sufficient_evidence'
   END AS confidence_label,
   CASE
-    WHEN demand_score >= 60 AND (district_nfhs5 = 'Unresolved' OR n_facilities < 5 OR (2 * half_width) > 0.5) THEN 'data_poor_high_need'
+    WHEN demand_score >= 60 AND (district_nfhs5 = 'Unresolved' OR n_facilities < 5 OR (2 * half_width) > 0.6) THEN 'data_poor_high_need'
     WHEN demand_score >= 60 AND p_hat < 0.2 AND n_facilities >= 5 THEN 'likely_real_gap'
     WHEN demand_score >= 60 THEN 'mixed_evidence'
     ELSE 'lower_priority'

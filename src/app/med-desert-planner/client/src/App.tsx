@@ -47,8 +47,8 @@ export default function App() {
   );
 
   const detail = useDistrictDetail({
-    specialty: selectedRow?.specialty ?? (specialty || ''),
-    state: selectedRow?.state ?? '',
+    specialty: selectedRow?.specialty ?? effectiveSpecialty,
+    state: selectedRow?.state ?? region,
     district: selectedRow?.district_name ?? '',
   });
 

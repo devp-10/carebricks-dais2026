@@ -19,8 +19,8 @@ SELECT
 FROM medical_desert_planner.gold.district_facility_evidence e
 LEFT JOIN medical_desert_planner.silver.facilities_clean f
   ON e.facility_id = f.facility_id
-WHERE e.specialty = :specialty
+WHERE (:specialty = 'All capabilities' OR e.specialty = :specialty)
   AND e.state_nfhs5 = :state
-  AND e.district_nfhs5 = :district
+  AND (:district = '__all__' OR e.district_nfhs5 = :district)
 ORDER BY facility_name, e.source_field, e.claim_id
-LIMIT 200
+LIMIT 600

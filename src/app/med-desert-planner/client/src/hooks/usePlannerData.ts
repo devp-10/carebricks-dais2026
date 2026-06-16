@@ -46,21 +46,22 @@ export function useDistrictScores(filters: PlannerFilters) {
 }
 
 export function useDistrictDetail(args: { specialty: string; state: string; district: string }) {
-  const has = Boolean(args.specialty && args.state && args.district);
+  const hasEvidence = Boolean(args.specialty && args.state);
+  const hasDemand = Boolean(args.state && args.district);
   const evidenceParams = useMemo(
     () => ({
-      specialty: sql.string(has ? args.specialty : NONE),
-      state: sql.string(has ? args.state : NONE),
-      district: sql.string(has ? args.district : NONE),
+      specialty: sql.string(hasEvidence ? args.specialty : NONE),
+      state: sql.string(hasEvidence ? args.state : NONE),
+      district: sql.string(hasEvidence ? args.district || '__all__' : NONE),
     }),
-    [has, args.specialty, args.state, args.district],
+    [hasEvidence, args.specialty, args.state, args.district],
   );
   const demandParams = useMemo(
     () => ({
-      state: sql.string(has ? args.state : NONE),
-      district: sql.string(has ? args.district : NONE),
+      state: sql.string(hasDemand ? args.state : NONE),
+      district: sql.string(hasDemand ? args.district : NONE),
     }),
-    [has, args.state, args.district],
+    [hasDemand, args.state, args.district],
   );
 
   const {
