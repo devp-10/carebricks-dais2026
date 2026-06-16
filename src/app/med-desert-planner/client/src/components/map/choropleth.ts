@@ -1,6 +1,6 @@
 import type { ExpressionSpecification } from 'maplibre-gl';
 import type { DistrictScore } from '../../types';
-import { isDataPoor } from '../../lib/labels';
+import { DATA_POOR_HEX, isDataPoor, NO_DATA_HEX, RISK_STOPS } from '../../lib/labels';
 
 export type FeatureGapState = { has: boolean; gap: number; dataPoor: boolean };
 
@@ -27,21 +27,14 @@ export function fillColorExpression(): ExpressionSpecification {
   return [
     'case',
     ['!', ['to-boolean', ['coalesce', ['feature-state', 'has'], false]]],
-    '#ECEAE3',
+    NO_DATA_HEX,
     ['to-boolean', ['coalesce', ['feature-state', 'dataPoor'], false]],
-    '#9AA1AB',
+    DATA_POOR_HEX,
     [
       'interpolate',
       ['linear'],
       ['coalesce', ['feature-state', 'gap'], 0],
-      0,
-      '#5B6472',
-      40,
-      '#E6A23C',
-      70,
-      '#D2693F',
-      85,
-      '#B23B3B',
+      ...RISK_STOPS.flat(),
     ],
   ] as ExpressionSpecification;
 }

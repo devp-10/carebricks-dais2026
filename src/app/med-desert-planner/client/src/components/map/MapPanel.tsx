@@ -6,7 +6,7 @@ import { normalizeName } from '../../lib/geo/normalize';
 import { geoStateNames } from '../../lib/geo/states';
 import { matchDistrictFeature, type GeoFeatureLite } from '../../lib/geo/matchDistrict';
 import { aggregateToStates } from '../../lib/geo/aggregate';
-import { trustTier, TRUST_HEX } from '../../lib/labels';
+import { DATA_POOR_HEX, NO_DATA_HEX, riskHex, trustTier, TRUST_HEX } from '../../lib/labels';
 import { groupEvidence } from '../../lib/group';
 import { featureStateFor, stateFeatureState } from './choropleth';
 import { Breadcrumb } from './Breadcrumb';
@@ -72,12 +72,9 @@ function pathFor(feature: Feature, bounds: Bounds): string {
 }
 
 function gapFill(state: { has: boolean; gap: number; dataPoor: boolean } | undefined): string {
-  if (!state?.has) return '#ECEAE3';
-  if (state.dataPoor) return '#9AA1AB';
-  if (state.gap >= 85) return '#B23B3B';
-  if (state.gap >= 70) return '#D2693F';
-  if (state.gap >= 40) return '#E6A23C';
-  return '#5B6472';
+  if (!state?.has) return NO_DATA_HEX;
+  if (state.dataPoor) return DATA_POOR_HEX;
+  return riskHex(state.gap);
 }
 
 function finiteCoordinate(value: unknown): number | null {

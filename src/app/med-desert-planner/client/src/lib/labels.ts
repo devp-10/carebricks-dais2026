@@ -9,20 +9,23 @@ export const VERDICT: Record<VerdictLabel, { copy: string; rank: number; tone: s
 
 export const CONFIDENCE_COPY: Record<string, string> = {
   sufficient_evidence: 'Sufficient evidence',
-  data_poor: 'Data-poor',
+  data_poor: 'Low evidence',
   demand_uncertain: 'Demand uncertain',
 };
 
-// Sequential risk ramp: slate → amber → terracotta → crimson. Stops over gap 0..100.
-const RISK_STOPS: Array<[number, string]> = [
-  [0, '#5B6472'],
-  [40, '#E6A23C'],
-  [70, '#D2693F'],
-  [85, '#B23B3B'],
+// Sequential risk ramp: quiet neutral -> amber -> terracotta -> crimson. Stops over gap 0..100.
+export const RISK_STOPS: Array<[number, string]> = [
+  [0, '#D7DBD2'],
+  [40, '#F0B84F'],
+  [70, '#D96B3D'],
+  [85, '#B83A3A'],
 ];
 
+export const DATA_POOR_HEX = '#9AA1AB';
+export const NO_DATA_HEX = '#ECEAE3';
+
 export function riskHex(gap: number | null | undefined): string {
-  if (gap === null || gap === undefined || Number.isNaN(gap)) return '#9AA1AB';
+  if (gap === null || gap === undefined || Number.isNaN(gap)) return DATA_POOR_HEX;
   let chosen = RISK_STOPS[0][1];
   for (const [threshold, hex] of RISK_STOPS) if (gap >= threshold) chosen = hex;
   return chosen;
@@ -50,8 +53,8 @@ export const TRUST_HEX: Record<TrustTier, string> = {
 };
 
 export const TRUST_COPY: Record<TrustTier, string> = {
-  strong: 'Strong',
-  partial: 'Partial',
-  weak: 'Weak',
+  strong: 'Strong claim',
+  partial: 'Partial claim',
+  weak: 'Weak claim',
   no_claim: 'No claim',
 };

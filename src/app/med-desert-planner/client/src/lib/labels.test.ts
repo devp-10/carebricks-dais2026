@@ -7,9 +7,9 @@ describe('labels', () => {
     expect(VERDICT.likely_real_gap.rank).toBe(0);
     expect(VERDICT.lower_priority.rank).toBe(3);
   });
-  it('riskHex ramps slate→crimson by gap score', () => {
-    expect(riskHex(10)).toBe('#5B6472');
-    expect(riskHex(90)).toBe('#B23B3B');
+  it('riskHex ramps neutral to crimson by gap score', () => {
+    expect(riskHex(10)).toBe('#D7DBD2');
+    expect(riskHex(90)).toBe('#B83A3A');
   });
   it('isDataPoor keys off confidence + verdict', () => {
     expect(isDataPoor('data_poor', 'data_poor_high_need')).toBe(true);
