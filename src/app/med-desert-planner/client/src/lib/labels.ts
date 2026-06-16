@@ -15,7 +15,7 @@ export const CONFIDENCE_COPY: Record<string, string> = {
 
 // Sequential risk ramp: quiet neutral -> amber -> terracotta -> crimson. Stops over gap 0..100.
 export const RISK_STOPS: Array<[number, string]> = [
-  [0, '#D7DBD2'],
+  [0, '#B8CDB4'],
   [40, '#F0B84F'],
   [70, '#D96B3D'],
   [85, '#B83A3A'],
@@ -23,6 +23,7 @@ export const RISK_STOPS: Array<[number, string]> = [
 
 export const DATA_POOR_HEX = '#C8A96A';
 export const NO_DATA_HEX = '#ECEAE3';
+export const FACILITY_DOT_HEX = '#2f6bff';
 
 export function riskHex(gap: number | null | undefined): string {
   if (gap === null || gap === undefined || Number.isNaN(gap)) return DATA_POOR_HEX;

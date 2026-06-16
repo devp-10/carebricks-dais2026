@@ -1,11 +1,4 @@
-import {
-  DATA_POOR_HEX,
-  NO_DATA_HEX,
-  RISK_STOPS,
-  TRUST_COPY,
-  TRUST_HEX,
-  type TrustTier,
-} from '../../lib/labels';
+import { DATA_POOR_HEX, FACILITY_DOT_HEX, NO_DATA_HEX, RISK_STOPS } from '../../lib/labels';
 
 export function Legend({ showFacilities }: { showFacilities: boolean }) {
   const riskGradient = `linear-gradient(90deg,${RISK_STOPS.map(([, hex]) => hex).join(',')})`;
@@ -41,24 +34,18 @@ export function Legend({ showFacilities }: { showFacilities: boolean }) {
         </div>
       </div>
 
-      {/* documented supply locations */}
+      {/* facility dots */}
       {showFacilities && (
         <div>
           <p className="mb-1 text-[9.5px] font-semibold uppercase tracking-[0.07em] text-muted">
-            Supply
+            Facilities
           </p>
-          <div className="flex items-center gap-2 text-[10px] text-muted">
-            {(Object.keys(TRUST_HEX) as TrustTier[])
-              .filter((t) => t !== 'no_claim')
-              .map((t) => (
-                <span key={t} className="flex items-center gap-1">
-                  <span
-                    className="size-2.5 rounded-full ring-1 ring-white"
-                    style={{ background: TRUST_HEX[t] }}
-                  />
-                  {TRUST_COPY[t]}
-                </span>
-              ))}
+          <div className="flex items-center gap-1.5 text-[10px] text-muted">
+            <span
+              className="size-2.5 rounded-full ring-1 ring-white"
+              style={{ background: FACILITY_DOT_HEX }}
+            />
+            Documented facility
           </div>
         </div>
       )}
