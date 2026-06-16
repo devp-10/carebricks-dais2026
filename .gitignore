@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.egg-info/
+.databricks/
+node_modules/
+dist/
+client/dist/
+.smoke-test/
+test-results/
+playwright-report/

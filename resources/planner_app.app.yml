@@ -1,0 +1,13 @@
+resources:
+  apps:
+    planner_app:
+      name: med-desert-planner
+      description: Medical Desert Planner
+      source_code_path: ../src/app/med-desert-planner
+      user_api_scopes:
+        - sql
+      resources:
+        - name: sql-warehouse
+          sql_warehouse:
+            id: 76ed2f6ff2ff98a7
+            permission: CAN_USE

@@ -1,0 +1,3 @@
+{"type":"FeatureCollection", "features": [
+{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[73.081,8.328],[73.068,8.309],[73.049,8.267],[73.067,8.286],[73.069,8.308],[73.081,8.328]]]},"properties":{"NAME_1":"Lakshadweep","NAME_2":"Kavaratti"}}
+]}

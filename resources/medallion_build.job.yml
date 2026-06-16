@@ -1,0 +1,15 @@
+resources:
+  jobs:
+    medallion_build:
+      name: medical-desert-medallion-build
+      description: Build Bronze, Silver, Gold, and app persistence tables for the Medical Desert Planner.
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: build_medallion
+          notebook_task:
+            notebook_path: ../src/notebooks/01_build_medallion.py
+            source: WORKSPACE
+            base_parameters:
+              catalog: ${var.catalog}
+              source_schema: ${var.source_schema}
+              population_schema: ${var.population_schema}
