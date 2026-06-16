@@ -12,12 +12,15 @@ const DOT: Record<SaveState, string> = {
 export function AppBar({ saveState, saveMessage }: { saveState: SaveState; saveMessage: string }) {
   return (
     <header className="flex items-center justify-between gap-4 border-b border-line bg-surface/80 px-5 py-3 backdrop-blur-sm">
-      <h1
-        className="text-[22px] font-black leading-none text-accent"
-        style={{ fontFamily: '"Avenir Next", "Trebuchet MS", ui-sans-serif, system-ui, sans-serif' }}
-      >
-        CareBricks
-      </h1>
+      <div className="flex items-center gap-2.5">
+        <img src="/assets/carebricks-logo.svg" alt="" className="size-7 shrink-0" />
+        <h1
+          className="text-[22px] font-black leading-none text-accent"
+          style={{ fontFamily: '"Avenir Next", "Trebuchet MS", ui-sans-serif, system-ui, sans-serif' }}
+        >
+          CareBricks
+        </h1>
+      </div>
 
       <div className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5">
         <span className={cn('size-2 rounded-full', DOT[saveState])} />
