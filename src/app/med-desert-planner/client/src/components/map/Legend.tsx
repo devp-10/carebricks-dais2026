@@ -1,4 +1,4 @@
-import { DATA_POOR_HEX, NO_DATA_HEX, RISK_STOPS } from '../../lib/labels';
+import { RISK_STOPS } from '../../lib/labels';
 
 export function Legend() {
   const riskGradient = `linear-gradient(90deg,${RISK_STOPS.map(([, hex]) => hex).join(',')})`;
@@ -12,19 +12,6 @@ export function Legend() {
           <span className="h-2.5 min-w-32 rounded-full" style={{ background: riskGradient }} />
           <span className="text-[10px] text-faint">high</span>
         </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-3 pb-0.5 text-[10px] text-muted">
-        <span className="flex items-center gap-1.5">
-          <span
-            className="h-3 w-3 rounded-[3px] border border-line-strong hatch"
-            style={{ backgroundColor: DATA_POOR_HEX }}
-          />
-          Data poor
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-[3px] border border-line-strong" style={{ backgroundColor: NO_DATA_HEX }} />
-          No data
-        </span>
       </div>
     </div>
   );
