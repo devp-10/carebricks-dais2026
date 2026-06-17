@@ -39,10 +39,6 @@ export function ControlBar({
         onGenieResult={onGenieResult}
         disabled={specialtiesLoading}
       />
-      <div className="ml-auto hidden pb-1 text-[12px] text-muted lg:block">
-        Burden: <span className="font-medium text-ink">NFHS-5 (2019-21)</span> · supply:{' '}
-        <span className="font-medium text-ink">facility records</span>
-      </div>
     </div>
   );
 }

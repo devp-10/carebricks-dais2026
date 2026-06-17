@@ -1,7 +1,6 @@
-import { Save, X, Clock } from 'lucide-react';
+import { FileDown, X, Clock, Loader2 } from 'lucide-react';
 import type { DistrictScore, ScenarioRow } from '../../types';
 import { districtKey } from '../../types';
-import type { SaveState } from '../AppBar';
 import { riskHex, isDataPoor } from '../../lib/labels';
 import { displaySpecialty } from '../../lib/format';
 import { cn } from '../../lib/utils';
@@ -15,9 +14,9 @@ export function ScenarioDrawer({
   onNotes,
   flaggedRows,
   onUnflag,
-  onSave,
+  onGenerate,
   onClear,
-  saveState,
+  generating,
   activeScenarioId,
   scenarios,
   onLoadScenario,
@@ -30,9 +29,9 @@ export function ScenarioDrawer({
   onNotes: (v: string) => void;
   flaggedRows: DistrictScore[];
   onUnflag: (key: string) => void;
-  onSave: () => void;
+  onGenerate: () => void;
   onClear: () => void;
-  saveState: SaveState;
+  generating: boolean;
   activeScenarioId: string;
   scenarios: ScenarioRow[];
   onLoadScenario: (s: ScenarioRow) => void;
@@ -43,15 +42,15 @@ export function ScenarioDrawer({
     <div className="fixed inset-0 z-40 flex justify-end">
       <button
         type="button"
-        aria-label="Close scenario"
+        aria-label="Close planner"
         onClick={onClose}
         className="absolute inset-0 bg-ink/20 backdrop-blur-[1px]"
       />
       <aside className="animate-rise relative flex h-full w-[min(420px,92vw)] flex-col border-l border-line bg-bg shadow-[var(--shadow-pop)]">
         <div className="flex items-center justify-between border-b border-line bg-surface px-4 py-3">
           <div>
-            <h2 className="text-[14px] font-semibold text-ink">Planning scenario</h2>
-            <p className="text-[11px] text-muted">Flag districts, add notes, save the trail</p>
+            <h2 className="text-[14px] font-semibold text-ink">Planner</h2>
+            <p className="text-[11px] text-muted">Flag districts, add notes, generate a PDF plan</p>
           </div>
           <button
             type="button"
@@ -65,7 +64,7 @@ export function ScenarioDrawer({
         <div className="min-h-0 flex-1 space-y-4 overflow-auto p-4">
           <div>
             <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.09em] text-muted">
-              Scenario name
+              Plan name
             </label>
             <input
               value={name}
@@ -126,12 +125,16 @@ export function ScenarioDrawer({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={onSave}
-              disabled={saveState === 'saving'}
+              onClick={onGenerate}
+              disabled={generating || flaggedRows.length === 0}
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-accent px-3 py-2.5 text-[13px] font-semibold text-white hover:bg-accent-ink disabled:opacity-60"
             >
-              <Save className="size-4" />
-              {saveState === 'saving' ? 'Saving…' : 'Save scenario'}
+              {generating ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <FileDown className="size-4" />
+              )}
+              {generating ? 'Generating…' : 'Generate plan'}
             </button>
             <button
               type="button"
@@ -141,13 +144,16 @@ export function ScenarioDrawer({
               Clear
             </button>
           </div>
-          {activeScenarioId && (
-            <p className="text-[11px] text-muted">Active scenario — flagged districts and claim reviews attach here.</p>
+          {flaggedRows.length === 0 && (
+            <p className="text-[11px] text-muted">Flag at least one district to generate a plan.</p>
+          )}
+          {activeScenarioId && flaggedRows.length > 0 && (
+            <p className="text-[11px] text-muted">Active plan — flagged districts and claim reviews attach here.</p>
           )}
 
           {scenarios.length > 0 && (
             <div className="border-t border-line pt-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.09em] text-muted">Recent scenarios</p>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.09em] text-muted">Recent plans</p>
               <div className="space-y-1.5">
                 {scenarios.slice(0, 6).map((s) => (
                   <button

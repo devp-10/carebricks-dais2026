@@ -1,3 +1,7 @@
+import { readFileSync } from 'fs';
+import { homedir } from 'os';
+import { join } from 'path';
+import PDFDocument from 'pdfkit';
 import { createApp, analytics, genie, server, sql } from '@databricks/appkit';
 import type { Request, Response } from 'express';
 
@@ -25,6 +29,73 @@ type AnalyticsApi = {
     query: (statement: string, parameters?: Record<string, SqlString | null | undefined>) => Promise<unknown>;
   };
 };
+
+type FlaggedDistrict = {
+  district_name: string;
+  state: string;
+  specialty: string;
+  gap_score: number;
+  confidence_label: string;
+  verdict_label: string;
+  demand_label: string;
+  n_facilities: number;
+  documented_supply_rate: number;
+};
+
+type PlanSection = {
+  executive_summary: string;
+  priority_regions: Array<{
+    region: string;
+    specialty: string;
+    risk_analysis: string;
+    recommended_action: string;
+  }>;
+  cross_cutting_interventions: string[];
+  field_verification_checklist: string[];
+};
+
+function getDatabricksCredentials(): { host: string; token: string } {
+  const envHost = process.env.DATABRICKS_HOST ?? '';
+  const envToken = process.env.DATABRICKS_TOKEN ?? '';
+  if (envHost && envToken) return { host: envHost, token: envToken };
+
+  const profile = process.env.DATABRICKS_CONFIG_PROFILE ?? 'DEFAULT';
+  try {
+    const configPath = join(homedir(), '.databrickscfg');
+    const config = readFileSync(configPath, 'utf-8');
+    const profileMatch = config.match(new RegExp(`\\[${profile}\\]([^\\[]*)`));
+    if (profileMatch) {
+      const hostMatch = profileMatch[1].match(/host\s*=\s*(.+)/);
+      const tokenMatch = profileMatch[1].match(/token\s*=\s*(.+)/);
+      return {
+        host: (envHost || hostMatch?.[1]?.trim() || '').replace(/\/$/, ''),
+        token: envToken || tokenMatch?.[1]?.trim() || '',
+      };
+    }
+  } catch {
+    // ignore config read errors
+  }
+  return { host: envHost.replace(/\/$/, ''), token: envToken };
+}
+
+function addPdfSection(doc: InstanceType<typeof PDFDocument>, title: string) {
+  doc.moveDown(0.8);
+  doc.fontSize(11).fillColor('#1e3a5f').font('Helvetica-Bold').text(title.toUpperCase(), { characterSpacing: 0.5 });
+  doc.moveTo(doc.page.margins.left, doc.y + 2)
+    .lineTo(doc.page.width - doc.page.margins.right, doc.y + 2)
+    .strokeColor('#d0dce8')
+    .lineWidth(0.5)
+    .stroke();
+  doc.moveDown(0.4);
+  doc.font('Helvetica').fontSize(10).fillColor('#1a1a2e');
+}
+
+function addPdfBullet(doc: InstanceType<typeof PDFDocument>, text: string) {
+  const x = doc.page.margins.left + 12;
+  const width = doc.page.width - doc.page.margins.left - doc.page.margins.right - 12;
+  doc.fontSize(10).fillColor('#1a1a2e').font('Helvetica')
+    .text(`• ${text}`, x, doc.y, { width, indent: 0 });
+}
 
 function text(value: unknown, fallback = '') {
   if (typeof value !== 'string') return fallback;
@@ -196,6 +267,236 @@ createApp({
         } catch (error) {
           console.error('Failed to shortlist facility', error);
           return jsonResponse(res, 500, { error: 'Failed to shortlist facility' });
+        }
+      });
+
+      app.post('/api/generate-plan', async (req: Request, res: Response) => {
+        try {
+          const body = req.body as Record<string, unknown>;
+          const name = text(body.name, 'Care Gap Intervention Plan');
+          const notes = text(body.notes);
+          const flaggedDistricts = (Array.isArray(body.flaggedDistricts) ? body.flaggedDistricts : []) as FlaggedDistrict[];
+
+          if (flaggedDistricts.length === 0) {
+            return jsonResponse(res, 400, { error: 'At least one district must be flagged' });
+          }
+
+          const { host, token } = getDatabricksCredentials();
+
+          const districtLines = flaggedDistricts.map(
+            (d) =>
+              `  - ${d.district_name}, ${d.state} | Specialty: ${d.specialty} | Gap Score: ${d.gap_score.toFixed(2)} | Verdict: ${d.verdict_label} | Confidence: ${d.confidence_label} | Known facilities: ${d.n_facilities} | Documented supply rate: ${(d.documented_supply_rate * 100).toFixed(1)}%`
+          );
+
+          const systemPrompt = [
+            'You are a senior healthcare infrastructure planning expert specialising in medical desert identification and care gap remediation in India.',
+            'You work with the Virtue Foundation to help policymakers prioritise healthcare investments in underserved regions.',
+            '',
+            'When given a list of flagged districts with care gap data, produce a structured intervention plan as valid JSON.',
+            'Reference the specific districts, specialties, gap scores, and confidence levels in your analysis.',
+            'Be concrete and actionable — mention facility types, programme names, or ministry schemes where appropriate.',
+            '',
+            'Respond ONLY with a JSON object matching this exact schema (no markdown fences, no explanation outside JSON):',
+            '{',
+            '  "executive_summary": "<2-3 paragraphs summarising the overall care gap situation and highest-priority actions>",',
+            '  "priority_regions": [',
+            '    {',
+            '      "region": "<district>, <state>",',
+            '      "specialty": "<specialty>",',
+            '      "risk_analysis": "<1-2 sentences on why this region is flagged and what the data shows>",',
+            '      "recommended_action": "<specific, measurable intervention recommendation>"',
+            '    }',
+            '  ],',
+            '  "cross_cutting_interventions": ["<intervention>", ...],',
+            '  "field_verification_checklist": ["<checklist item>", ...]',
+            '}',
+          ].join('\n');
+
+          const userPrompt = [
+            `Plan name: ${name}`,
+            '',
+            'Flagged districts:',
+            ...districtLines,
+            '',
+            notes ? `Planner notes: ${notes}` : 'Planner notes: None provided.',
+            '',
+            'Generate the intervention plan JSON now.',
+          ].join('\n');
+
+          const llmRes = await fetch(`${host}/serving-endpoints/gpt-5-4-mini/invocations`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt },
+              ],
+              temperature: 0.3,
+              max_tokens: 3000,
+            }),
+          });
+
+          if (!llmRes.ok) {
+            const errText = await llmRes.text();
+            console.error('LLM call failed', llmRes.status, errText);
+            return jsonResponse(res, 502, { error: 'LLM service unavailable', details: errText });
+          }
+
+          const llmJson = (await llmRes.json()) as { choices?: Array<{ message?: { content?: string } }> };
+          const rawContent = llmJson.choices?.[0]?.message?.content ?? '';
+
+          let plan: PlanSection;
+          try {
+            const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+            plan = JSON.parse(jsonMatch?.[0] ?? rawContent) as PlanSection;
+          } catch {
+            console.error('Failed to parse LLM JSON response', rawContent);
+            return jsonResponse(res, 502, { error: 'Failed to parse plan from LLM response' });
+          }
+
+          const generatedAt = new Date().toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          });
+
+          const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Disposition', `attachment; filename="care-plan-${Date.now()}.pdf"`);
+          doc.pipe(res);
+
+          // ── Cover header ───────────────────────────────────────────────
+          doc.rect(0, 0, doc.page.width, 110).fill('#1e3a5f');
+          doc.fontSize(22).fillColor('#ffffff').font('Helvetica-Bold')
+            .text('CareBricks', 50, 28, { characterSpacing: 0.5 });
+          doc.fontSize(11).fillColor('#a8c4d8').font('Helvetica')
+            .text('Medical Desert Intervention Plan  ·  Virtue Foundation  ·  India', 50, 56);
+          doc.fontSize(15).fillColor('#ffffff').font('Helvetica-Bold')
+            .text(name, 50, 78, { width: doc.page.width - 100 });
+
+          doc.fillColor('#1a1a2e').font('Helvetica');
+          doc.y = 128;
+
+          doc.fontSize(9).fillColor('#6b7280')
+            .text(`Generated ${generatedAt}  ·  ${flaggedDistricts.length} district${flaggedDistricts.length !== 1 ? 's' : ''} flagged`, {
+              align: 'right',
+            });
+
+          // ── Executive summary ──────────────────────────────────────────
+          addPdfSection(doc, 'Executive Summary');
+          doc.fontSize(10).fillColor('#1a1a2e').font('Helvetica')
+            .text(plan.executive_summary ?? '', { lineGap: 3 });
+
+          // ── Planner notes ──────────────────────────────────────────────
+          if (notes) {
+            addPdfSection(doc, 'Planner Notes');
+            doc.fontSize(10).fillColor('#374151').font('Helvetica-Oblique')
+              .text(notes, { lineGap: 3 });
+          }
+
+          // ── Flagged regions summary ────────────────────────────────────
+          addPdfSection(doc, 'Flagged Regions Summary');
+          const colW = [160, 100, 55, 95, 85];
+          const headers = ['District', 'State', 'Gap Score', 'Verdict', 'Confidence'];
+          const rowX = doc.page.margins.left;
+
+          // Header row
+          doc.fontSize(8.5).fillColor('#ffffff').font('Helvetica-Bold');
+          let cx = rowX;
+          const headerY = doc.y;
+          doc.rect(rowX, headerY, colW.reduce((a, b) => a + b, 0) + colW.length * 6, 16).fill('#1e3a5f');
+          cx = rowX + 4;
+          headers.forEach((h, i) => {
+            doc.fillColor('#ffffff').text(h, cx, headerY + 3, { width: colW[i], lineBreak: false });
+            cx += colW[i] + 6;
+          });
+          doc.moveDown(0.1);
+          doc.y = headerY + 19;
+
+          // Data rows
+          flaggedDistricts.forEach((d, idx) => {
+            const rowY = doc.y;
+            if (idx % 2 === 0) {
+              doc.rect(rowX, rowY, colW.reduce((a, b) => a + b, 0) + colW.length * 6, 15).fill('#f0f4f8');
+            }
+            const verdict = (d.verdict_label ?? '').replace(/_/g, ' ');
+            const conf = (d.confidence_label ?? '').replace(/_/g, ' ');
+            const cells = [d.district_name, d.state, d.gap_score.toFixed(2), verdict, conf];
+            cx = rowX + 4;
+            doc.fontSize(8).fillColor('#1a1a2e').font('Helvetica');
+            cells.forEach((cell, i) => {
+              doc.text(cell, cx, rowY + 3, { width: colW[i], lineBreak: false });
+              cx += colW[i] + 6;
+            });
+            doc.y = rowY + 17;
+          });
+
+          // ── Per-region analysis ────────────────────────────────────────
+          if (plan.priority_regions?.length > 0) {
+            addPdfSection(doc, 'Regional Analysis');
+            for (const pr of plan.priority_regions) {
+              doc.moveDown(0.3);
+              doc.fontSize(10).fillColor('#1e3a5f').font('Helvetica-Bold')
+                .text(`${pr.region ?? ''}  —  ${pr.specialty ?? ''}`);
+              doc.fontSize(9.5).fillColor('#374151').font('Helvetica')
+                .text(pr.risk_analysis ?? '', { lineGap: 2 });
+              doc.fontSize(9.5).fillColor('#1a5c3a').font('Helvetica-Bold').text('Recommendation: ', { continued: true });
+              doc.font('Helvetica').fillColor('#374151').text(pr.recommended_action ?? '', { lineGap: 2 });
+            }
+          }
+
+          // ── Cross-cutting interventions ────────────────────────────────
+          if (plan.cross_cutting_interventions?.length > 0) {
+            addPdfSection(doc, 'Cross-Cutting Interventions');
+            for (const item of plan.cross_cutting_interventions) {
+              addPdfBullet(doc, item);
+            }
+          }
+
+          // ── Field verification checklist ───────────────────────────────
+          if (plan.field_verification_checklist?.length > 0) {
+            addPdfSection(doc, 'Field Verification Checklist');
+            plan.field_verification_checklist.forEach((item, i) => {
+              const x = doc.page.margins.left + 4;
+              const width = doc.page.width - doc.page.margins.left - doc.page.margins.right - 24;
+              doc.fontSize(10).fillColor('#1a1a2e').font('Helvetica')
+                .text(`${i + 1}. ${item}`, x, doc.y, { width, lineGap: 2 });
+            });
+          }
+
+          // ── Footer on all pages ────────────────────────────────────────
+          const range = doc.bufferedPageRange();
+          for (let i = 0; i < range.count; i++) {
+            doc.switchToPage(range.start + i);
+            const footerY = doc.page.height - 38;
+            doc.moveTo(doc.page.margins.left, footerY)
+              .lineTo(doc.page.width - doc.page.margins.right, footerY)
+              .strokeColor('#d0dce8').lineWidth(0.5).stroke();
+            doc.fontSize(7.5).fillColor('#9ca3af').font('Helvetica')
+              .text(`CareBricks · Medical Desert Intervention Plan · ${generatedAt}`, doc.page.margins.left, footerY + 6, {
+                width: doc.page.width - doc.page.margins.left - doc.page.margins.right - 40,
+              });
+            doc.text(`Page ${i + 1} of ${range.count}`, doc.page.margins.left, footerY + 6, {
+              width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
+              align: 'right',
+            });
+          }
+
+          doc.end();
+          return;
+        } catch (error) {
+          console.error('Failed to generate plan', error);
+          if (!res.headersSent) {
+            jsonResponse(res, 500, {
+              error: 'Failed to generate plan',
+              details: error instanceof Error ? error.message : String(error),
+            });
+          }
+          return;
         }
       });
 

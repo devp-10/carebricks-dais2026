@@ -5,9 +5,9 @@ import type { DistrictScore, EvidenceRow, ScenarioRow, ViewState } from './types
 import { districtKey } from './types';
 import { useReferenceData, useDistrictScores, useDistrictDetail } from './hooks/usePlannerData';
 import { useGeoData } from './hooks/useGeoData';
-import { saveScenario, reviewClaim } from './api/persistence';
+import { generatePlan, reviewClaim } from './api/persistence';
 import { displaySpecialty } from './lib/format';
-import { AppBar, type SaveState } from './components/AppBar';
+import { AppBar } from './components/AppBar';
 import { ControlBar } from './components/controls/ControlBar';
 import { InsightRail } from './components/rail/InsightRail';
 import { MapPanel } from './components/map/MapPanel';
@@ -29,11 +29,10 @@ export default function App() {
 
   const [flaggedRows, setFlaggedRows] = useState<Map<string, DistrictScore>>(new Map());
   const [scenarioOpen, setScenarioOpen] = useState(false);
-  const [scenarioName, setScenarioName] = useState('Priority outreach plan');
-  const [scenarioNotes, setScenarioNotes] = useState('');
+  const [planName, setPlanName] = useState('Priority outreach plan');
+  const [planNotes, setPlanNotes] = useState('');
   const [activeScenarioId, setActiveScenarioId] = useState('');
-  const [saveState, setSaveState] = useState<SaveState>('idle');
-  const [saveMessage, setSaveMessage] = useState('');
+  const [generating, setGenerating] = useState(false);
 
   const effectiveSpecialty = specialty.length > 0 ? specialty.join(', ') : 'All capabilities';
 
@@ -135,6 +134,7 @@ export default function App() {
       return next;
     });
   }, []);
+
   const unflag = useCallback((key: string) => {
     setFlaggedRows((prev) => {
       const next = new Map(prev);
@@ -143,67 +143,48 @@ export default function App() {
     });
   }, []);
 
-  /* ---------- persistence ---------- */
-  const flash = (state: SaveState, message: string) => {
-    setSaveState(state);
-    setSaveMessage(message);
-  };
-
-  const handleSave = useCallback(async () => {
-    if (!effectiveSpecialty) return;
-    flash('saving', 'Saving scenario…');
+  /* ---------- plan generation ---------- */
+  const handleGeneratePlan = useCallback(async () => {
+    if (flaggedRows.size === 0) return;
+    setGenerating(true);
     try {
-      const res = await saveScenario({
-        name: scenarioName,
-        specialty: effectiveSpecialty,
-        notes: scenarioNotes,
-        geoFilter: { region, verdict, flagged: [...flaggedRows.keys()] },
+      await generatePlan({
+        name: planName,
+        notes: planNotes,
+        flaggedDistricts: [...flaggedRows.values()],
       });
-      setActiveScenarioId(res.scenario_id);
-      flash('saved', 'Scenario saved');
-    } catch (e) {
-      flash('error', e instanceof Error ? e.message : 'Save failed');
+    } finally {
+      setGenerating(false);
     }
-  }, [effectiveSpecialty, scenarioName, scenarioNotes, region, verdict, flaggedRows]);
+  }, [planName, planNotes, flaggedRows]);
 
+  /* ---------- claim reviews ---------- */
   const handleReview = useCallback(
     async (claim: EvidenceRow, status: ReviewStatus) => {
-      if (!activeScenarioId) {
-        setScenarioOpen(true);
-        flash('error', 'Save a scenario before reviewing claims');
-        throw new Error('no scenario');
-      }
-      flash('saving', 'Saving review…');
-      try {
-        await reviewClaim({
-          scenario_id: activeScenarioId,
-          claim_id: claim.claim_id,
-          facility_id: claim.facility_id,
-          review_status: status,
-          note: `Marked ${status} in evidence drawer`,
-        });
-        flash('saved', `Claim marked ${status}`);
-      } catch (e) {
-        flash('error', e instanceof Error ? e.message : 'Review failed');
-        throw e;
-      }
+      if (!activeScenarioId) throw new Error('no active plan loaded');
+      await reviewClaim({
+        scenario_id: activeScenarioId,
+        claim_id: claim.claim_id,
+        facility_id: claim.facility_id,
+        review_status: status,
+        note: `Marked ${status} in evidence drawer`,
+      });
     },
     [activeScenarioId]
   );
 
   const loadScenario = useCallback((s: ScenarioRow) => {
     setActiveScenarioId(s.scenario_id);
-    setScenarioName(s.name);
-    setScenarioNotes(s.notes ?? '');
+    setPlanName(s.name);
+    setPlanNotes(s.notes ?? '');
     if (s.specialty) {
       setSpecialty(s.specialty === 'All capabilities' ? [] : s.specialty.split(',').map((item) => item.trim()));
     }
-    flash('saved', `Loaded "${s.name}"`);
   }, []);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-bg">
-      <AppBar saveState={saveState} saveMessage={saveMessage} />
+      <AppBar />
       <ControlBar
         specialties={specialties}
         specialtiesLoading={specialtiesLoading}
@@ -274,14 +255,13 @@ export default function App() {
         </PanelGroup>
       </main>
 
-      {/* scenario launcher */}
       <button
         type="button"
         onClick={() => setScenarioOpen(true)}
         className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink shadow-[var(--shadow-pop)] hover:border-accent"
       >
         <ClipboardList className="size-4 text-accent" />
-        Scenario
+        Planner
         {flaggedRows.size > 0 && (
           <span className="mono grid size-5 place-items-center rounded-full bg-accent text-[11px] text-white">
             {flaggedRows.size}
@@ -292,18 +272,18 @@ export default function App() {
       <ScenarioDrawer
         open={scenarioOpen}
         onClose={() => setScenarioOpen(false)}
-        name={scenarioName}
-        onName={setScenarioName}
-        notes={scenarioNotes}
-        onNotes={setScenarioNotes}
+        name={planName}
+        onName={setPlanName}
+        notes={planNotes}
+        onNotes={setPlanNotes}
         flaggedRows={[...flaggedRows.values()]}
         onUnflag={unflag}
-        onSave={() => void handleSave()}
+        onGenerate={() => void handleGeneratePlan()}
         onClear={() => {
           setFlaggedRows(new Map());
-          setScenarioNotes('');
+          setPlanNotes('');
         }}
-        saveState={saveState}
+        generating={generating}
         activeScenarioId={activeScenarioId}
         scenarios={scenarios}
         onLoadScenario={loadScenario}

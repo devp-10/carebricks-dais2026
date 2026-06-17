@@ -25,10 +25,6 @@ export function InsightRail({
       <div className="border-b border-line p-4">
         <KpiStrip rows={rows} />
       </div>
-      <div className="flex items-baseline justify-between px-5 py-3">
-        <h2 className="text-[16px] font-semibold text-ink">Ranked districts</h2>
-        <span className="text-[11.5px] text-muted">highest-risk first</span>
-      </div>
       {error ? (
         <ErrorState message={error} />
       ) : (

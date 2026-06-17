@@ -17,6 +17,37 @@ async function postJson(path: string, body: Record<string, unknown>) {
   return payload;
 }
 
+export async function generatePlan(b: {
+  name: string;
+  notes: string;
+  flaggedDistricts: unknown[];
+}): Promise<void> {
+  const res = await fetch('/api/generate-plan', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(b),
+  });
+  if (!res.ok) {
+    const payload = (await res.json()) as Record<string, unknown>;
+    const message =
+      typeof payload.details === 'string'
+        ? payload.details
+        : typeof payload.error === 'string'
+          ? payload.error
+          : 'Plan generation failed';
+    throw new Error(message);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `care-plan-${Date.now()}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
 export function saveScenario(b: {
   name: string;
   specialty: string;
